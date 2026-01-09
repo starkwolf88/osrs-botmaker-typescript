@@ -7,7 +7,7 @@ export type RawItemCombinationData = {
     }[];
     make_widget_data?: {
         packed_widget_id: number;
-        id: number;
+        identifier: number;
         opcode: number;
         p0: number
     };
@@ -24,7 +24,7 @@ export const itemCombinationData = [
         ],
         make_widget_data:  {
             packed_widget_id: 17694736,
-            id: 1,
+            identifier: 1,
             opcode: 57,
             p0: -1
         },
@@ -37,6 +37,12 @@ export const itemCombinationData = [
             {name: 'pie_dish', quantity: 14},
             {name: 'pastry_dough', quantity: 14}
         ],
+        make_widget_data:  {
+            packed_widget_id: 17694735,
+            identifier: 1,
+            opcode: 57,
+            p0: -1
+        },
         timeout: 30
     }
 ];

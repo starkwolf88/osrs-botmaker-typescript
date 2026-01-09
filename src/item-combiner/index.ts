@@ -1,17 +1,16 @@
-/** TO DO */
-// Send notification in game and on discord when script stops
-// Click relevant option widget
-// Add UI
-// Add buy more ingredients and sell with GE
+// To-Do
+    // Send notification in game and on discord when script stops
+    // Add UI
+    // Long-term: Add buy more ingredients and sell with GE
 
-
-/** TYPE IMPORTS **/
+// Type imports
 import type {MappedItemCombinationData} from 'src/imports/item-functions.js';
 
-
-/** FUNCTION IMPORTS **/
-import {logger} from 'src/imports/logger.js';
+// Data imports
 import {itemCombinationData} from 'src/imports/item-combination-data.js';
+
+// Function imports
+import {logger} from 'src/imports/logger.js';
 import {antibanFunctions} from 'src/imports/antiban-functions.js';
 import {bankFunctions} from 'src/imports/bank-functions.js';
 import {debugFunctions} from 'src/imports/debug-functions.js';
@@ -21,82 +20,69 @@ import {itemFunctions} from 'src/imports/item-functions.js';
 import {utilityFunctions} from 'src/imports/utility-functions.js';
 import {timeoutManager} from 'src/imports/timeout-manager.js';
 
-
-/** VARIABLES **/
-const antibanEnabled = bot.variables.getBooleanVariable('[Setting] Antiban AFKs');
-const debugEnabled = bot.variables.getBooleanVariable('[Setting] Debug Enabled');
+// Variables
 const scriptName = '[Stark] Item Combiner';
 const state = {
+    antibanEnabled: bot.variables.getBooleanVariable('[Setting] Antiban AFKs'),
     antibanTriggered: false,
     current: 'start_state',
+    debugEnabled: bot.variables.getBooleanVariable('[Setting] Debug Enabled'),
+    debugFullState: bot.variables.getBooleanVariable('[Setting] Debug Full State'),
+    gameTick: 0,
     itemCombinationData: undefined as MappedItemCombinationData | undefined,
     startDepositAllCompleted: false,
-    timeout: 0 // << required for AFK delay
+    timeout: 0
 };
 
-
-/** GENERAL FUNCTIONS **/
-// Script start logic.
+// Functions
 const onStart = () => {
-    logger('both', 'onStart', `Starting ${scriptName}.`); // Debug Log
+    logger(state, 'all', 'Script', `Starting ${scriptName}.`);
 
-    // Set item combination data state from GUI variables.
+    // Set item combination data state from GUI variables and add item ID's.
     const guiCombination = itemCombinationData.find(itemCombination => bot.variables.getBooleanVariable(utilityFunctions.convertToTitleCase(itemCombination.combined_item)));
     if (!guiCombination) throw new Error('No item combination selected in GUI.');
 
-    // Add item IDs to item combination data.
+    // Add item IDs to item combination data and set state.
     const itemCombinationDataWithIds = itemFunctions.addItemIdsToItemCombination(guiCombination);
     if (!itemCombinationDataWithIds) throw new Error(`Failed to map item IDs for ${guiCombination.combined_item}.`)
-
-    // Set item combination data state.
     state.itemCombinationData = itemCombinationDataWithIds;
-    logger('both', 'onStart', `We are creating ${utilityFunctions.convertToTitleCase(guiCombination.combined_item)}.`);
+    logger(state, 'all', 'Script', `We are creating ${utilityFunctions.convertToTitleCase(guiCombination.combined_item)}.`);
 };
 
-// Game tick logic. Every 0.6s.
 const onGameTick = () => {
-    if (debugEnabled) logger('log', 'onGameTick', `Function start.`);
-    if (debugEnabled) debugFunctions.stateDebugger(state);
-
-    // Break handling - set to false until in a static state
-    bot.breakHandler.setBreakHandlerStatus(false);
-
-    // Return if static timeout is set.
-    if (state.timeout > 0) {
-        state.timeout--;
-        return;
-    }
-
-    // Process advanced timeout manager conditions
-    timeoutManager.tick();
-
-    // Stop here if any timeoutManager conditions are still waiting
-    if (timeoutManager.isWaiting()) return;
-
-    // Antiban AFK
-    if (antibanEnabled && antibanFunctions.triggerAfkIfNeeded(state)) return;
-
-    // Break handling - Only break when timeout functions not being waited on
-    bot.breakHandler.setBreakHandlerStatus(true);
-
-    // State manager
+    state.gameTick++;
     try {
+        logger(state, 'debug', 'onGameTick', `Function start. Script game tick ${state.gameTick}`);
+        if (state.debugEnabled && state.debugFullState) debugFunctions.stateDebugger(state);
+
+        // Break logic.
+        bot.breakHandler.setBreakHandlerStatus(false);
+
+        // Timeout logic.
+        if (state.timeout > 0) {
+            state.timeout--;
+            return;
+        }
+        timeoutManager.tick();
+        if (timeoutManager.isWaiting()) return;
+
+        // Antiban AFK and break logic.
+        if (state.antibanEnabled && antibanFunctions.afkTrigger(state)) return;
+        bot.breakHandler.setBreakHandlerStatus(true);
+
+        // State manager.
         stateManager();
     } catch (error) {
-        logger('both', 'onGameTick', (error as Error).toString());
+        logger(state, 'all', 'Script', (error as Error).toString());
         bot.terminate();
     }
 };
 
-// Script end logic.
 const onEnd = () => generalFunctions.endScript(scriptName);
 
-
-/** SCRIPT FUNCTIONS **/
-// State management - main script functionality.
 const stateManager = () => {
-    if (debugEnabled) logger('log', 'stateManager', `Function start.`); // Debug Log
-    
+    logger(state, 'debug', `stateManager: ${state.current}`, `Function start.`);
+
     // Re-assign itemCombinationData for safe use throughout this function.
     const itemCombinationData = state.itemCombinationData;
     if (!itemCombinationData) throw new Error('Item combination not initialized');
@@ -104,205 +90,168 @@ const stateManager = () => {
     // Determine current state.
     switch(state.current) {
 
-        // `start_state`: Open the bank and deposit all if first bank interaction.
+        // Timeout until bank is open.
         case 'start_state': {
-            if (debugEnabled) logger('log', 'stateManager', `Case: start_start.`); // Debug Log
+            if (!bot.localPlayerIdle()) break;
 
-            logger('both', 'stateManager', 'Testing before add condition')
-
-            timeoutManager.addCondition({
-                conditionFunction: () => bot.bank.isOpen(),
-                maxTicks: 30,
-                onFail: 'Bank did not open during `start_state`'
-            });
-
-            logger('both', 'stateManager', 'Testing after add condition')
-
+            // Timeout until bank is open.
+            if (!bot.bank.isOpen()) {
+                timeoutManager.add({
+                    state,
+                    conditionFunction: () => bot.bank.isOpen(),
+                    action: () => {
+                        logger(state, 'debug', `stateManager: ${state.current}`, 'Opening the bank');
+                        bot.bank.open();
+                    },
+                    maxWait: 10,
+                    maxAttempts: 3,
+                    retryTimeout: 3,
+                    onFail: () => {throw new Error('Bank did not open during `start_state` after 3 attempts and 10 ticks.')}
+                });
+                break;
+            }
+            state.current = 'deposit_items';
             break;
-
-            // // Open the bank if it isn't open.
-            // if (!bot.bank.isOpen()) {
-            //     logger('both', 'stateManager', 'Opening bank to withdraw items.');
-            //     bot.bank.open();
-            //     state.timeout.conditions.push(() => bot.bank.isOpen());
-            //     break;
-            // }
-
-            // // Deposit all on script start.
-            // if (!state.startDepositAllCompleted) {
-            //     bot.bank.depositAll();
-            //     state.startDepositAllCompleted = true;
-            //     break;
-            // }
-
-            // // Assign next state
-            // state.current = 'deposit_items';
-            // break;
         }
 
-        // // Deposit all if `deposit_all` is set, or the combined item if not.
-        // case 'deposit_items': {
-        //     if (debugEnabled) logger('log', 'stateManager', `Case: deposit_items.`); // Debug Log
+        // Deposit all if `deposit_all` is set, or the combined item if not.
+        case 'deposit_items': {
+            if (!bankFunctions.requireBankOpen(state, 'start_state') || !bot.localPlayerIdle()) break;
 
-        //     // Open the bank if it isn't open.
-        //     if (!bot.bank.isOpen()) {
-        //         state.current = 'start_state';
-        //         break;
-        //     }
+            // Deposit items.
+            logger(state, 'debug', `stateManager: ${state.current}`, 'Depositing items.');
+            itemCombinationData.deposit_all || !state.startDepositAllCompleted ? bot.bank.depositAll() : bot.bank.depositAllWithId(itemCombinationData.combined_item_id);
 
-        //     // Deposit items.
-        //     if (debugEnabled) logger('log', 'stateManager', 'Depositing combined items.');
-        //     itemCombinationData.deposit_all ? bot.bank.depositAll() : bot.bank.depositAllWithId(itemCombinationData.combined_item_id);
+            // Assign next state.
+            state.current = 'check_bank_quantities';
+            break;
+        }
 
-        //     // Assign next state.
-        //     state.current = 'check_item_quantities';
-        //     break;
-        // }
+        // Check bank item quantities.
+        case 'check_bank_quantities': {
+            if (!bankFunctions.requireBankOpen(state, 'start_state') || !bot.localPlayerIdle()) break;
 
-        // // `check_item_quantities`: Check item quantities.
-        // case 'check_item_quantities': {
-        //     if (debugEnabled) logger('log', 'stateManager', `Case: check_item_quantities.`); // Debug Log
+            // Check item quantities in the bank.
+            logger(state, 'debug', `stateManager: ${state.current}`, 'Checking bank item quantities.');
+            if (bankFunctions.anyQuantitiyLow(itemCombinationData.items)) throw new Error('Ran out of items to combine.');
 
-        //     // Open the bank if it isn't open.
-        //     if (!bot.bank.isOpen()) {
-        //         state.current = 'start_state';
-        //         break;
-        //     }
+            // Assign next state.
+            state.current = 'withdraw_items';
+            break;
+        }
 
-        //     // Check item quantities in the bank.
-        //     if (debugEnabled) logger('log', 'stateManager', 'Checking item quantities.');
-        //     if (bankFunctions.anyQuantitiyLow(itemCombinationData.items)) throw new Error('Ran out of items to combine.');
+        // Withdraw items from the bank.
+        case 'withdraw_items': {
+            if (!bankFunctions.requireBankOpen(state, 'start_state') || !bot.localPlayerIdle()) break;
 
-        //     // Assign next state.
-        //     state.current = 'withdraw_items';
-        //     break;
-        // }
+            // Withdraw missing items.
+            if (bankFunctions.withdrawMissingItems(state, itemCombinationData.items)) break; 
 
-        // // Withdraw items from the bank.
-        // case 'withdraw_items': {
-        //     if (debugEnabled) logger('log', 'stateManager', `Case: withdraw_items.`); // Debug Log
+            // If the inventory doesn't contain all items, reset to `start_state`.
+            if (!bot.inventory.containsAllIds(itemCombinationData.items.map(item => item.id))) {
+                state.current = 'start_state';
+                break;
+            }
 
-        //     // If the bank is not open, go back to `start_state`.
-        //     if (!bot.bank.isOpen()) {
-        //         state.current = 'start_state';
-        //         break;
-        //     }
+            // Assign next state.
+            state.current = 'check_inventory_quantities';
+            break;
+        }
 
-        //     // Withdraw missing items one at a time.
-        //     for (const item of itemCombinationData.items) {
-        //         if (!bot.inventory.containsId(item.id)) {
-        //             state.timeout.conditions.push(() => bot.inventory.containsId(item.id));
-        //             bot.bank.withdrawQuantityWithId(item.id, item.quantity);
-        //             if (debugEnabled) logger('log', 'stateManager', `Withdrawing item ID ${item.id}. with quantity ${item.quantity}`);
-        //             break;
-        //         }
-        //     }
+        // Check inventory item quantities.
+        case 'check_inventory_quantities': {
+            if (!bot.localPlayerIdle()) break;
+    
+            // If inventory quantities do not match the required quantities, go back to `start_state`.
+            logger(state, 'debug', `stateManager: ${state.current}`, 'Checking inventory item quantities.');
+            if (!inventoryFunctions.checkQuantitiesMatch(itemCombinationData.items.map(item => ({itemId: item.id, quantity: item.quantity})))) {
+                state.current = 'start_state';
+                break;
+            }
 
-        //     // Break if inventory doesn't contain all items.
-        //     if (!bot.inventory.containsAllIds(itemCombinationData.items.map(item => item.id))) break;
+            // Assign next state.
+            state.current = 'close_bank';
+            break;
+        }
 
-        //     // If inventory quantities do not match the required quantities, go back to `start_state`.
-        //     if (!inventoryFunctions.checkQuantitiesMatch(itemCombinationData.items.map(item => ({itemId: item.id, quantity: item.quantity})))) {
-        //         state.current = 'start_state';
-        //         break;
-        //     }
+        // Close the bank if open.
+        case 'close_bank': {
+            if (!bot.localPlayerIdle()) break;
 
-        //     // Assign next state.
-        //     state.current = 'close_bank';
-        //     break;
-        // }
+            // Timeout until bank is closed. Reset to `start_state` if not closed after 3 attempts.
+            if (bot.bank.isOpen()) {
+                timeoutManager.add({
+                    state,
+                    conditionFunction: () => !bot.bank.isOpen(),
+                    action: () => {
+                        logger(state, 'debug', `stateManager: ${state.current}`, 'Closing the bank');
+                        bot.bank.close();
+                    },
+                    maxWait: 10,
+                    maxAttempts: 3,
+                    retryTimeout: 3,
+                    onFail: () => {
+                        logger(state, 'debug', `stateManager: ${state.current}`, 'Bank did not close after 3 attempts and 10 ticks.');
+                        state.current = 'start_state';
+                    }
+                });
+                break;
+            }
 
-        // // Close the bank if open.
-        // case 'close_bank': {
-        //     if (debugEnabled) logger('log', 'stateManager', `Case: close_bank.`); // Debug Log
+            // Assign next state.
+            state.current = 'item_interact';
+            break;
+        }
 
-        //     // Close the bank if open
-        //     if (bot.bank.isOpen()) {
-        //         bot.bank.close();
-        //         state.timeout.conditions.push(() => !bot.bank.isOpen());
-        //         break;
-        //     }
+        // Interact both items to create combined item.
+        case 'item_interact': {
+            if (!bankFunctions.requireBankClosed(state, 'close_bank') || !bot.localPlayerIdle()) break;
 
-        //     // Assign next state.
-        //     state.current = 'item_interact';
-        //     break;
-        // }
+            // If the inventory doesn't contain all items, reset to `start_state`.
+            if (!bot.inventory.containsAllIds(itemCombinationData.items.map(item => item.id))) {
+                state.current = 'start_state';
+                break;
+            }
 
-        // // Item interaction - use items on each other.
-        // case 'item_interact': {
-        //     if (debugEnabled) logger('log', 'stateManager', `Case: item_interact.`); // Debug Log
+            // Create item interact function.
+            const item1 = itemCombinationData.items[0];
+            const item2 = itemCombinationData.items[1];
+            const itemInteract = () => {
+                logger(state, 'debug', `stateManager: ${state.current}`, `Combining ${item1.name} with ${item2.name}. Timeout: ${itemCombinationData.timeout}.`);
+                bot.inventory.itemOnItemWithIds(item1.id, item2.id);
+            }
 
-        //     // If items are not in the inventory, go back to `start_state`.
-        //     if (!bot.inventory.containsAllIds(itemCombinationData.items.map(item => item.id))) {
-        //         state.current = 'start_state';
-        //         break;
-        //     }
+            // Determine if a make item interface exists for this combination and select it.
+            const widgetData = itemCombinationData.make_widget_data;
+            if (widgetData) {
 
-        //     // if the bank is open, go back to `close_bank`.
-        //     if (bot.bank.isOpen()) {
-        //         state.current = 'close_bank';
-        //         break;
-        //     }
+                // Timeout until the widget is visible.
+                if (!client.getWidget(widgetData.packed_widget_id)) {
+                    timeoutManager.add({
+                        state,
+                        conditionFunction: () => client.getWidget(widgetData.packed_widget_id) !== null,
+                        action: () => itemInteract(),
+                        maxWait: 10,
+                        maxAttempts: 3,
+                        retryTimeout: 3,
+                        onFail: () => {throw new Error('Make item widget not visible after 3 attempts and 10 ticks.')}
+                    });
+                    break;
+                }
 
-        //     // If the player isn't idle, timeout.
-        //     if (!bot.localPlayerIdle()) {
-        //         state.timeout.conditions.push(() => bot.localPlayerIdle());
-        //         break;
-        //     }
+                // Interact with widget
+                bot.widgets.interactSpecifiedWidget(widgetData.packed_widget_id, widgetData.identifier, widgetData.opcode, widgetData.p0);
+            } else {
+                itemInteract();
+            }
 
-        //     // If the inventory contains items to combine, interact with the items.
-        //     const item1 = itemCombinationData.items[0];
-        //     const item2 = itemCombinationData.items[1];
-        //     const itemsRequireCombining = () => bot.inventory.containsAllIds(itemCombinationData.items.map(item => item.id));
-        //     if (itemsRequireCombining()) {
-        //         logger('both', 'stateManager', `Combining ${item1.name} with ${item2.name}. Timeout: ${itemCombinationData.timeout}.`);
+            // Timeout so that items can combine.
+            state.timeout = itemCombinationData.timeout;
+            state.current = 'start_state';
+            break;
+        }
 
-        //         // Item interaction - use items on each other.
-        //         bot.inventory.itemOnItemWithIds(item1.id, item2.id);
-
-        //         // Assign next state.
-        //         state.current = 'item_widget_interact';
-        //     }
-        //     break;
-        // }
-
-        // // Determine if a "Make X" interface exists for this combination and select it
-        // case 'item_widget_interact': {
-        //     if (debugEnabled) logger('log', 'stateManager', `Case: item_widget_interact.`); // Debug Log
-
-        //         // // Determine if a "Make X" interface exists for this combination and select it
-        //         // const widgetData = itemCombinationData.make_widget_data;
-        //         // if (widgetData) {
-
-        //         //     // If the widget isn't showing, wait for it to show.
-        //         //     const widgetVisible = () => client.getWidget(widgetData.id) !== null;
-        //         //     if (!widgetVisible()) {
-        //         //         state.timeout.conditions.push(() => widgetVisible());
-        //         //         break;
-        //         //     }
-
-        //         //     // Click the "Make X" widget.
-        //         //     bot.widgets.interactSpecifiedWidget(widgetData.packed_widget_id, widgetData.id, widgetData.opcode, widgetData.p0);
-        //         //     break;
-        //         // }
-
-
-        //         // Timeout until the inventory does not contain any items to combine.
-        //         // state.timeout.conditions.push(() => !itemsRequireCombining());
-        //         // // Timeout for the duration of processing.
-        //         // state.timeout.conditions.push(() => playerIdleAndItemsNotCombined());
-        //         // state.timeout = itemCombinationData.timeout;
-        //         // break;
-
-
-        //     // Assign next state.
-        //     state.current = 'start_state';
-        //     break;
-        // }
-
-        // Default back to bank opening.
         default: {
-            if (debugEnabled) logger('log', 'stateManager', `Case: default.`); // Debug Log
             state.current = 'start_state';
             break;
         }

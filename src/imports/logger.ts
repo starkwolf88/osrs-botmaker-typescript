@@ -1,22 +1,12 @@
 export const logger = (
-    type: 'game' | 'log' | 'both', // Log type.
+    state: {
+        debugEnabled: boolean, // Is debug enabled.
+    },
+    type: 'all' | 'debug', // Log type
     source: string, // Source of the message,
     message: string, // Message to show in the log.
 ): void => {
     const logMessage = `[${source}] ${message}`;
-    switch (type) {
-        case 'game': {
-            bot.printGameMessage(logMessage);
-            break;
-        }
-        case 'log': {
-            bot.printLogMessage(logMessage);
-            break;
-        }
-        case 'both': {
-            bot.printGameMessage(logMessage);
-            bot.printLogMessage(logMessage);
-            break;
-        }
-    }
+    if (type == 'all') bot.printGameMessage(logMessage);
+    if (type == 'all' || (type == 'debug' && state.debugEnabled)) bot.printLogMessage(logMessage);
 };

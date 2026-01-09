@@ -12,18 +12,23 @@ export const antibanFunctions = {
         if (utilityFunctions.randomInt(1, 100) <= triggerChancePercentage) {
             timeout = utilityFunctions.randomInt(min, max);
             if (utilityFunctions.randomInt(1, 100) <= additionalAfkChancePercentage) timeout += utilityFunctions.randomInt(min, max);
-            logger('both', 'antibanFunctions', `Random AFK. Timeout: ${timeout}.`);
         }
         return timeout;
     },
 
-    triggerAfkIfNeeded: (state: { antibanTriggered: boolean; timeout: number }): boolean => {
+    afkTrigger: (
+        state: {
+            antibanTriggered: boolean;
+            debugEnabled: boolean,
+            timeout: number
+        }
+    ): boolean => {
         if (!state.antibanTriggered) {
             const antibanTimeout = antibanFunctions.getRandomisedAfkTimeout(5, 15, 1, 5) || antibanFunctions.getRandomisedAfkTimeout(1, 5, 1, 5);
             if (antibanTimeout > 0) {
                 state.timeout = antibanTimeout;
                 state.antibanTriggered = true;
-                logger('both', 'antibanFunctions', `AFK triggered for ${antibanTimeout} ticks.`);
+                logger(state, 'all', 'antibanFunctions.afkTrigger', `Random AFK for ${antibanTimeout} ticks.`);
                 return true;
             }
         }
