@@ -52,6 +52,11 @@
 		"typescript-eslint": "^7.1.1"
 	},
 	"dependencies": {
+<<<<<<< Updated upstream
 		"@deafwave/osrs-botmaker-types": "^0.7.13"
 	}
+=======
+        "@deafwave/osrs-botmaker-types": "https://registry.npmjs.org/@deafwave/osrs-botmaker-types/-/osrs-botmaker-types-0.7.11.tgz"
+    }
+>>>>>>> Stashed changes
 }
