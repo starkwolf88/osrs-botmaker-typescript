@@ -9,18 +9,8 @@ importers:
   .:
     dependencies:
       '@deafwave/osrs-botmaker-types':
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
         specifier: ^0.7.13
         version: 0.7.13
-=======
-        specifier: https://registry.npmjs.org/@deafwave/osrs-botmaker-types/-/osrs-botmaker-types-0.7.11.tgz
-        version: 0.7.11
->>>>>>> Stashed changes
-=======
-        specifier: https://registry.npmjs.org/@deafwave/osrs-botmaker-types/-/osrs-botmaker-types-0.7.11.tgz
-        version: 0.7.11
->>>>>>> Stashed changes
     devDependencies:
       '@babel/preset-env':
         specifier: ^7.24.6
@@ -635,12 +625,17 @@ packages:
 
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
   '@babel/types@7.28.5':
     resolution: {integrity: sha512-qQ5m48eI/MFLQ5PxQj4PFaprjyCTLI37ElWMmNs0K8Lk3dVeOdNpB3ks8jc7yM5CDmVC73eMVk/trk3fgmrUpA==}
     engines: {node: '>=6.9.0'}
 
   '@deafwave/osrs-botmaker-types@0.7.13':
     resolution: {integrity: sha512-FQ7x1iYtf6010Ys6UTphcZkGZ9WW/rLz8X47Dp7dNE/uylEPnu23vWHcW76PgfshDKEuwenL9mY0drOmVFtZfw==}
+=======
+  '@deafwave/osrs-botmaker-types@0.7.11':
+    resolution: {integrity: sha512-ZUpUYt8YE/Fg3YDGVH3ZXqBJambcVs+N3TdShKOMeUwfGuqg12wxhPdRIVYqPECJf+Gf8NpftsisxoEwz7e/sw==}
+>>>>>>> Stashed changes
 =======
   '@deafwave/osrs-botmaker-types@0.7.11':
     resolution: {integrity: sha512-ZUpUYt8YE/Fg3YDGVH3ZXqBJambcVs+N3TdShKOMeUwfGuqg12wxhPdRIVYqPECJf+Gf8NpftsisxoEwz7e/sw==}
@@ -3462,12 +3457,16 @@ snapshots:
 
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
   '@babel/types@7.28.5':
     dependencies:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.28.5
 
   '@deafwave/osrs-botmaker-types@0.7.13': {}
+=======
+  '@deafwave/osrs-botmaker-types@0.7.11': {}
+>>>>>>> Stashed changes
 =======
   '@deafwave/osrs-botmaker-types@0.7.11': {}
 >>>>>>> Stashed changes
