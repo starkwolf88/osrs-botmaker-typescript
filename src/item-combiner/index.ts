@@ -94,15 +94,19 @@ const stateManager = () => {
         case 'start_state': {
             if (!bot.localPlayerIdle()) break;
 
+            // Timeout action.
+            const startStateTimeoutAction = () => {
+                logger(state, 'debug', `stateManager: ${state.current}`, 'Opening the bank');
+                bot.bank.open();
+            };
+            startStateTimeoutAction();
+
             // Timeout until bank is open.
             if (!bot.bank.isOpen()) {
                 timeoutManager.add({
                     state,
                     conditionFunction: () => bot.bank.isOpen(),
-                    action: () => {
-                        logger(state, 'debug', `stateManager: ${state.current}`, 'Opening the bank');
-                        bot.bank.open();
-                    },
+                    action: () => startStateTimeoutAction(),
                     maxWait: 10,
                     maxAttempts: 3,
                     retryTimeout: 3,
@@ -178,15 +182,19 @@ const stateManager = () => {
         case 'close_bank': {
             if (!bot.localPlayerIdle()) break;
 
+            // Timeout action.
+            const closeBankTimeoutAction = () => {
+                logger(state, 'debug', `stateManager: ${state.current}`, 'Closing the bank');
+                bot.bank.close();
+            };
+            closeBankTimeoutAction();
+
             // Timeout until bank is closed. Reset to `start_state` if not closed after 3 attempts.
             if (bot.bank.isOpen()) {
                 timeoutManager.add({
                     state,
                     conditionFunction: () => !bot.bank.isOpen(),
-                    action: () => {
-                        logger(state, 'debug', `stateManager: ${state.current}`, 'Closing the bank');
-                        bot.bank.close();
-                    },
+                    action: () => closeBankTimeoutAction(),
                     maxWait: 10,
                     maxAttempts: 3,
                     retryTimeout: 3,
@@ -216,10 +224,11 @@ const stateManager = () => {
             // Create item interact function.
             const item1 = itemCombinationData.items[0];
             const item2 = itemCombinationData.items[1];
-            const itemInteract = () => {
+            const itemInteractTimeoutAction = () => {
                 logger(state, 'debug', `stateManager: ${state.current}`, `Combining ${item1.name} with ${item2.name}. Timeout: ${itemCombinationData.timeout}.`);
                 bot.inventory.itemOnItemWithIds(item1.id, item2.id);
             }
+            itemInteractTimeoutAction();
 
             // Determine if a make item interface exists for this combination and select it.
             const widgetData = itemCombinationData.make_widget_data;
@@ -230,7 +239,7 @@ const stateManager = () => {
                     timeoutManager.add({
                         state,
                         conditionFunction: () => client.getWidget(widgetData.packed_widget_id) !== null,
-                        action: () => itemInteract(),
+                        action: () => itemInteractTimeoutAction(),
                         maxWait: 10,
                         maxAttempts: 3,
                         retryTimeout: 3,
@@ -241,8 +250,6 @@ const stateManager = () => {
 
                 // Interact with widget
                 bot.widgets.interactSpecifiedWidget(widgetData.packed_widget_id, widgetData.identifier, widgetData.opcode, widgetData.p0);
-            } else {
-                itemInteract();
             }
 
             // Timeout so that items can combine.

@@ -54,20 +54,32 @@ export const timeoutManager = {
     tick(): void {
         this.conditions = this.conditions.filter(condition => {
 
-            // Condition satisfied? remove
+            // Condition satisfied? remove immediately
             if (condition.conditionFunction()) return false;
 
             // Retry logic
             if (condition.action && (condition.maxAttempts === undefined || condition._attempts! < condition.maxAttempts)) {
-                if (condition._retryCooldown! <= 0) {
+
+                // loop retries in same tick if cooldown allows
+                while (condition._retryCooldown! <= 0 && (condition.maxAttempts === undefined || condition._attempts! < condition.maxAttempts)) {
                     condition.action();
                     condition._attempts!++;
+
+                    // If the action satisfied the condition, remove
+                    if (condition.conditionFunction()) return false;
+
+                    // reset cooldown for next retry (optional: can be 0 for instant)
                     condition._retryCooldown = condition.retryTimeout ?? 1;
-                    if (condition.conditionFunction()) return false;
-                } else {
-                    condition._retryCooldown!--;
-                    if (condition.conditionFunction()) return false;
+
+                    // If retryTimeout is 0, loop again immediately; else wait
+                    if (condition._retryCooldown > 0) break;
                 }
+
+                // decrement cooldown if not zero
+                if (condition._retryCooldown! > 0) condition._retryCooldown!--;
+
+                // Check condition again after cooldown decrement
+                if (condition.conditionFunction()) return false;
             }
 
             // Increment ticks every tick
