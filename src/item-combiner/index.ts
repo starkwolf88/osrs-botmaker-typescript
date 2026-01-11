@@ -2,11 +2,8 @@
     // Add more combinations. Unfinished potions. Potions. Fletching. Gems. Glass.
     // Add UI
 
-// Type imports
-import type {MappedItemCombinationData} from 'src/imports/item-functions.js';
-
 // Data imports
-import {itemCombinationData} from 'src/imports/item-combination-data.js';
+import {ItemCombinationData, itemCombinationData} from 'src/imports/item-combination-data.js';
 
 // Function imports
 import {logger} from 'src/imports/logger.js';
@@ -15,7 +12,6 @@ import {bankFunctions} from 'src/imports/bank-functions.js';
 import {debugFunctions} from 'src/imports/debug-functions.js';
 import {generalFunctions} from 'src/imports/general-functions.js';
 import {inventoryFunctions} from 'src/imports/inventory-functions.js';
-import {itemFunctions} from 'src/imports/item-functions.js';
 import {utilityFunctions} from 'src/imports/utility-functions.js';
 import {timeoutManager} from 'src/imports/timeout-manager.js';
 
@@ -23,7 +19,7 @@ import {timeoutManager} from 'src/imports/timeout-manager.js';
 const state = {
     scriptName: '[Stark] Item Combiner',
     current: 'start_state',
-    itemCombinationData: undefined as MappedItemCombinationData | undefined,
+    itemCombinationData: undefined as ItemCombinationData | undefined,
     antibanTriggered: false,
     startDepositAllCompleted: false,
     gameTick: 0,
@@ -38,23 +34,19 @@ const state = {
 
 // Functions
 const onStart = () => {
-    logger(state, 'all', 'Script', `Starting ${state.scriptName}.`);
-
-    // Set item combination data state from GUI variables and add item ID's.
-    const guiCombination = itemCombinationData.find(itemCombination => bot.variables.getBooleanVariable(utilityFunctions.convertToTitleCase(itemCombination.combined_item)));
-    if (!guiCombination) throw new Error('No item combination selected in GUI.');
-
-    // Add item IDs to item combination data and set state.
-    const itemCombinationDataWithIds = itemFunctions.addItemIdsToItemCombination(guiCombination);
-    if (!itemCombinationDataWithIds) throw new Error(`Failed to map item IDs for ${guiCombination.combined_item}.`)
-    state.itemCombinationData = itemCombinationDataWithIds;
-    logger(state, 'all', 'Script', `We are creating ${utilityFunctions.convertToTitleCase(guiCombination.combined_item)}.`);
+    try {
+        logger(state, 'all', 'Script', `Starting ${state.scriptName}.`);
+        getGuiItemCombination();
+    } catch (error) {
+        logger(state, 'all', 'Script', (error as Error).toString());
+        bot.terminate();
+    }
 };
 
 const onGameTick = () => {
-    state.gameTick++;
     try {
         logger(state, 'debug', 'onGameTick', `Function start. Script game tick ${state.gameTick}`);
+        state.gameTick++;
         if (state.debugEnabled && state.debugFullState) debugFunctions.stateDebugger(state);
 
         // Break logic.
@@ -82,10 +74,16 @@ const onGameTick = () => {
 
 const onEnd = () => generalFunctions.endScript(state);
 
+const getGuiItemCombination = () => {
+    const itemCombination = itemCombinationData.find(itemCombination => bot.variables.getBooleanVariable(utilityFunctions.convertToTitleCase(itemCombination.combined_item_name)));
+    if (!itemCombination) throw new Error('Item combination not initialized');
+    logger(state, 'all', 'Script', `We are creating ${utilityFunctions.convertToTitleCase(itemCombination.combined_item_name)}.`);
+    state.itemCombinationData = itemCombination;
+};
+
 const stateManager = () => {
     logger(state, 'debug', `stateManager: ${state.current}`, `Function start.`);
 
-    // Re-assign itemCombinationData for safe use throughout this function.
     const itemCombinationData = state.itemCombinationData;
     if (!itemCombinationData) throw new Error('Item combination not initialized');
 
@@ -227,7 +225,7 @@ const stateManager = () => {
             const item1 = itemCombinationData.items[0];
             const item2 = itemCombinationData.items[1];
             const itemInteractTimeoutAction = () => {
-                logger(state, 'debug', `stateManager: ${state.current}`, `Combining ${item1.name} with ${item2.name}. Timeout: ${itemCombinationData.timeout}.`);
+                logger(state, 'debug', `stateManager: ${state.current}`, `Combining ${utilityFunctions.convertToTitleCase(item1.name)} with ${utilityFunctions.convertToTitleCase(item2.name)}. Timeout: ${itemCombinationData.timeout}.`);
                 bot.inventory.itemOnItemWithIds(item1.id, item2.id);
             }
             itemInteractTimeoutAction();
