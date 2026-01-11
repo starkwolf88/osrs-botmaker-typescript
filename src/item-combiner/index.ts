@@ -1,7 +1,6 @@
 // To-Do
-    // Send notification in game and on discord when script stops
+    // Add more combinations. Unfinished potions. Potions. Fletching. Gems. Glass.
     // Add UI
-    // Long-term: Add buy more ingredients and sell with GE
 
 // Type imports
 import type {MappedItemCombinationData} from 'src/imports/item-functions.js';
@@ -21,22 +20,25 @@ import {utilityFunctions} from 'src/imports/utility-functions.js';
 import {timeoutManager} from 'src/imports/timeout-manager.js';
 
 // Variables
-const scriptName = '[Stark] Item Combiner';
 const state = {
-    antibanEnabled: bot.variables.getBooleanVariable('[Setting] Antiban AFKs'),
-    antibanTriggered: false,
+    scriptName: '[Stark] Item Combiner',
     current: 'start_state',
+    itemCombinationData: undefined as MappedItemCombinationData | undefined,
+    antibanTriggered: false,
+    startDepositAllCompleted: false,
+    gameTick: 0,
+    timeout: 0,
+
+    // GUI
+    antibanEnabled: bot.variables.getBooleanVariable('[Setting] Antiban AFKs'),
     debugEnabled: bot.variables.getBooleanVariable('[Setting] Debug Enabled'),
     debugFullState: bot.variables.getBooleanVariable('[Setting] Debug Full State'),
-    gameTick: 0,
-    itemCombinationData: undefined as MappedItemCombinationData | undefined,
-    startDepositAllCompleted: false,
-    timeout: 0
+    scriptStopDiscordMessage: bot.variables.getBooleanVariable('[Setting] Script Stop Discord Notification')
 };
 
 // Functions
 const onStart = () => {
-    logger(state, 'all', 'Script', `Starting ${scriptName}.`);
+    logger(state, 'all', 'Script', `Starting ${state.scriptName}.`);
 
     // Set item combination data state from GUI variables and add item ID's.
     const guiCombination = itemCombinationData.find(itemCombination => bot.variables.getBooleanVariable(utilityFunctions.convertToTitleCase(itemCombination.combined_item)));
@@ -78,7 +80,7 @@ const onGameTick = () => {
     }
 };
 
-const onEnd = () => generalFunctions.endScript(scriptName);
+const onEnd = () => generalFunctions.endScript(state);
 
 const stateManager = () => {
     logger(state, 'debug', `stateManager: ${state.current}`, `Function start.`);
