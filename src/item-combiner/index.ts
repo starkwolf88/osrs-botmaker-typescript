@@ -84,13 +84,14 @@ const getGuiItemCombination = () => {
 const stateManager = () => {
     logger(state, 'debug', `stateManager: ${state.current}`, `Function start.`);
 
+    // Re-assign item combination data for safe use.
     const itemCombinationData = state.itemCombinationData;
     if (!itemCombinationData) throw new Error('Item combination not initialized');
 
     // Determine current state.
     switch(state.current) {
 
-        // Timeout until bank is open.
+        // Starting state of the script. Open the bank.
         case 'start_state': {
             if (!bot.localPlayerIdle()) break;
 
@@ -118,7 +119,7 @@ const stateManager = () => {
             break;
         }
 
-        // Deposit all if `deposit_all` is set, or the combined item if not.
+        // Deposit items into the bank.
         case 'deposit_items': {
             if (!bankFunctions.requireBankOpen(state, 'start_state') || !bot.localPlayerIdle()) break;
 
@@ -131,7 +132,7 @@ const stateManager = () => {
             break;
         }
 
-        // Check bank item quantities.
+        // Check bank item quantities are sufficient for item combining.
         case 'check_bank_quantities': {
             if (!bankFunctions.requireBankOpen(state, 'start_state') || !bot.localPlayerIdle()) break;
 
@@ -158,12 +159,12 @@ const stateManager = () => {
             }
 
             // Assign next state.
-            state.current = 'check_inventory_quantities';
+            state.current = 'validate_inventory_quantities';
             break;
         }
 
-        // Check inventory item quantities.
-        case 'check_inventory_quantities': {
+        // Validate inventory item quantities.
+        case 'validate_inventory_quantities': {
             if (!bot.localPlayerIdle()) break;
     
             // If inventory quantities do not match the required quantities, go back to `start_state`.
@@ -178,7 +179,7 @@ const stateManager = () => {
             break;
         }
 
-        // Close the bank if open.
+        // Close the bank if it's open.
         case 'close_bank': {
             if (!bot.localPlayerIdle()) break;
 
@@ -211,7 +212,7 @@ const stateManager = () => {
             break;
         }
 
-        // Interact both items to create combined item.
+        // Interact both items on one another to create the combined item.
         case 'item_interact': {
             if (!bankFunctions.requireBankClosed(state, 'close_bank') || !bot.localPlayerIdle()) break;
 
@@ -252,12 +253,13 @@ const stateManager = () => {
                 bot.widgets.interactSpecifiedWidget(widgetData.packed_widget_id, widgetData.identifier, widgetData.opcode, widgetData.p0);
             }
 
-            // Timeout so that items can combine.
+            // Timeout so that items can combine, then loop back around to script starting state.
             state.timeout = itemCombinationData.timeout;
             state.current = 'start_state';
             break;
         }
 
+        // Default to start state.
         default: {
             state.current = 'start_state';
             break;
