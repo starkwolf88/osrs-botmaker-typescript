@@ -16,9 +16,10 @@ import {utilityFunctions} from 'src/imports/utility-functions.js';
 const state = {
     scriptName: '[Stark] Snowy Knight Catcher',
     main_state: 'walk_to_snowy_whites',
-    antibanTriggered: false,
     gameTick: 0,
     timeout: 0,
+    useStaminas: true,
+    antibanTriggered: false,
     antibanEnabled: true,
     debugEnabled: false,
     debugFullState: false
@@ -46,7 +47,7 @@ const scriptLocations = {
 
 // State functions
 const isPlayerAtSnowyWhites = () => locationFunctions.isPlayerNearWorldPoint(scriptLocations.monsGratiaSnowyWhiteArea)
-const getSnowyWhiteCount = () => bot.inventory.getQuantityOfId(npcIds.mons_gratia.snowy_knight);
+const getSnowyWhiteCount = () => bot.inventory.getQuantityOfId(itemIds.snowy_knight);
 const isPlayerAtBank = () => locationFunctions.isPlayerNearWorldPoint(scriptLocations.quetzacaliGorgeBank);
 const openBankActionTimeout = () => {
     logger(state, 'debug', `stateManager: ${state.main_state}`, 'Opening the bank');
@@ -55,9 +56,6 @@ const openBankActionTimeout = () => {
 
 const stateManager = () => {
     logger(state, 'debug', `stateManager: ${state.main_state}`, `Function start.`);
-
-    // Reset back to `monsGratiaSnowyWhiteArea` if not within 8 tiles.
-    if (!locationFunctions.isPlayerNearWorldPoint(scriptLocations.monsGratiaSnowyWhiteArea, 8)) state.main_state = 'walk_to_snowy_whites';
 
     // Determine main state.
     switch(state.main_state) {
@@ -72,9 +70,9 @@ const stateManager = () => {
                 break;
             }
 
-            // Is player is at Mons Gratia Snowy White area.;
+            // Is player is at Mons Gratia Snowy White area.
             if (!isPlayerAtSnowyWhites()) {
-                logger(state, 'all', `stateManager: ${state.main_state}`, 'Walking to Snowy Knights in Mons Gratia.');
+                logger(state, 'all', `stateManager: ${state.main_state}`, 'Walking back to catch area.');
                 bot.walking.webWalkStart(scriptLocations.monsGratiaSnowyWhiteArea);
                 timeoutManager.add({
                     state,
@@ -93,6 +91,9 @@ const stateManager = () => {
         // Catch Snowy Knight
         case 'catch_snowy_knight': {
             if (!bot.localPlayerIdle() || bot.walking.isWebWalking()) break;
+
+            // Reset back to `monsGratiaSnowyWhiteArea` if not within 5 tiles.
+            if (!locationFunctions.isPlayerNearWorldPoint(scriptLocations.monsGratiaSnowyWhiteArea, 5)) state.main_state = 'walk_to_snowy_whites';
 
             // If inventory does not contain any butterfly jars, bank.
             if (!bot.inventory.containsId(itemIds.butterfly_jar)) {
@@ -182,6 +183,17 @@ const stateManager = () => {
             // Check item quantities in the bank.
             logger(state, 'debug', `stateManager: ${state.main_state}`, 'Checking butterfly jar quantity.');
             if (bankFunctions.isQuantityLow(itemIds.butterfly_jar, 1)) throw new Error('Ran out of Butterfly jars.');
+
+            // Assign next state.
+            state.main_state = 'withdraw_stamina';
+            break;
+        }
+        
+        // Withdraw stamina potion from the bank
+        case 'withdraw_stamina': {
+            if (state.useStaminas) {
+                //
+            }
 
             // Assign next state.
             state.main_state = 'withdraw_jars';

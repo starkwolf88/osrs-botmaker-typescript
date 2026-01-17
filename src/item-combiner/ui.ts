@@ -43,7 +43,8 @@ export const createUi = (
         [
             'Maple longbow (u)',
             'Pastry dough',
-            'Pie shell'
+            'Pie shell',
+            'Ultracompost'
         ],
         'Maple longbow (u)',
         colorScheme.TEXT,

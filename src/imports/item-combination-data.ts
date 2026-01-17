@@ -23,6 +23,30 @@ const timeouts = {
 
 export const itemCombinationData = [
     {
+        combined_item_name: 'Maple longbow (u)',
+        combined_item_id: 62,
+        deposit_all: false,
+        items: [
+            {
+                id: 946,
+                name: 'Knife',
+                quantity: 1
+            },
+            {
+                id: 1517,
+                name: 'Maple logs',
+                quantity: 27
+            }
+        ],
+        make_widget_data:  {
+            packed_widget_id: 17694737,
+            identifier: 1,
+            opcode: 57,
+            p0: -1
+        },
+        timeout: timeouts.unstrungBows
+    },
+    {
         combined_item_name: 'Pastry dough',
         combined_item_id: 1953,
         deposit_all: true,
@@ -71,27 +95,27 @@ export const itemCombinationData = [
         timeout: 30
     },
     {
-        combined_item_name: 'Maple longbow (u)',
-        combined_item_id: 62,
-        deposit_all: false,
+        combined_item_name: 'Ultracompost',
+        combined_item_id: 21483,
+        deposit_all: true,
         items: [
             {
-                id: 946,
-                name: 'Knife',
-                quantity: 1
+                id: 21622,
+                name: 'Volcanic ash',
+                quantity: 54
             },
             {
-                id: 1517,
-                name: 'Maple logs',
+                id: 6034,
+                name: 'Supercompost',
                 quantity: 27
             }
         ],
         make_widget_data:  {
-            packed_widget_id: 17694737,
+            packed_widget_id: 17694735,
             identifier: 1,
             opcode: 57,
             p0: -1
         },
-        timeout: timeouts.unstrungBows
+        timeout: 54
     }
 ];
