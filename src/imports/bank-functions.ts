@@ -6,13 +6,13 @@ export const bankFunctions = {
     // If the bank is not open, reset to the fallback state.
     requireBankOpen: (
         state: {
-            current: string,
+            main_state: string,
             debugEnabled: boolean
         },
         fallbackState: string
     ): boolean => {
         if (!bot.bank.isOpen()) {
-            state.current = fallbackState;
+            state.main_state = fallbackState;
             return false;
         }
         return true;
@@ -21,13 +21,13 @@ export const bankFunctions = {
     // If the bank is not closed, reset to the fallback state.
     requireBankClosed: (
         state: {
-            current: string,
+            main_state: string,
             debugEnabled: boolean
         },
         fallbackState: string
     ): boolean => {
         if (bot.bank.isOpen()) {
-            state.current = fallbackState;
+            state.main_state = fallbackState;
             return false;
         }
         return true;
@@ -50,7 +50,7 @@ export const bankFunctions = {
     // Withdraw missing items from the bank one at a time using timeoutManager
     withdrawMissingItems: (
         state: {
-            current: string,
+            main_state: string,
             debugEnabled: boolean
         },
         items: {

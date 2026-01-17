@@ -1,15 +1,55 @@
+// Function imports
+import {antibanFunctions} from './antiban-functions.js';
+import {debugFunctions} from './debug-functions.js';
+import {logger} from './logger.js';
+import {timeoutManager} from './timeout-manager.js';
+
 export const generalFunctions = {
+
+    // onGameTick general function.
+    gameTick: (
+        state: {
+            antibanEnabled: boolean,
+            antibanTriggered: boolean,
+            debugEnabled: boolean,
+            debugFullState: boolean,
+            gameTick: number,
+            timeout: number
+        }
+    ): void => {
+        try {
+            logger(state, 'debug', 'onGameTick', `Function start. Script game tick ${state.gameTick}`);
+            state.gameTick++;
+            if (state.debugEnabled && state.debugFullState) debugFunctions.stateDebugger(state);
+
+            // Break logic.
+            bot.breakHandler.setBreakHandlerStatus(false);
+
+            // Timeout logic.
+            if (state.timeout > 0) {
+                state.timeout--;
+                return;
+            }
+            timeoutManager.tick();
+            if (timeoutManager.isWaiting()) return;
+
+            // Antiban AFK and break logic.
+            if (state.antibanEnabled && antibanFunctions.afkTrigger(state)) return;
+            bot.breakHandler.setBreakHandlerStatus(true);
+        } catch (error) {
+            logger(state, 'all', 'Script', (error as Error).toString());
+            bot.terminate();
+        }
+    },
 
     // Code to execute after `onEnd()`.
     endScript: (
         state: {
-            scriptName: string,
-            scriptStopDiscordMessage: boolean
+            scriptName: string
         }
     ): void => {
         bot.printGameMessage(`Terminating ${state.scriptName}.`);
         bot.walking.webWalkCancel(); // Cancel any web walking.
         bot.events.unregisterAll(); // Unregister all events.
-        if (state.scriptStopDiscordMessage) bot.notifier.sendMessage(`Script (${state.scriptName}) has terminated.`); // Send discord notification
     }
 };

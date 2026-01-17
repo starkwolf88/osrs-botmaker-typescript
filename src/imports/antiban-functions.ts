@@ -18,8 +18,11 @@ export const antibanFunctions = {
 
     afkTrigger: (
         state: {
-            antibanTriggered: boolean;
+            antibanEnabled: boolean,
+            antibanTriggered: boolean,
             debugEnabled: boolean,
+            debugFullState: boolean,
+            gameTick: number,
             timeout: number
         }
     ): boolean => {

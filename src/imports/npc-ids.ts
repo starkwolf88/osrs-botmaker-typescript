@@ -1,5 +1,8 @@
 export const npcIds = {
-    FALADOR: {
-        AMY: 7417
+    falador: {
+        amy: 7417
+    },
+    mons_gratia: {
+        snowy_knight: 5554
     }
 };

@@ -420,8 +420,8 @@ const locationFunctions = {
     // localPlayerDistanceFromWorldPoint(): Returns the number of tiles between the player and a target WorldPoint.
     localPlayerDistanceFromWorldPoint: (targetWorldPoint: net.runelite.api.coords.WorldPoint) => client.getLocalPlayer().getWorldLocation().distanceTo(targetWorldPoint),
 
-    // isPlayerWithinWorldPointTileThreshold(): Checks if the player is within X tile threshold of the target WorldPoint (5 tiles default).
-    isPlayerWithinWorldPointTileThreshold: (targetWorldPoint: net.runelite.api.coords.WorldPoint, tileThreshold: number = 5) => locationFunctions.localPlayerDistanceFromWorldPoint(targetWorldPoint) <= tileThreshold
+    // isPlayerNearWorldPoint(): Checks if the player is within X tile threshold of the target WorldPoint (5 tiles default).
+    isPlayerNearWorldPoint: (targetWorldPoint: net.runelite.api.coords.WorldPoint, tileThreshold: number = 5) => locationFunctions.localPlayerDistanceFromWorldPoint(targetWorldPoint) <= tileThreshold
 };
 
 

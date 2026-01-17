@@ -1,7 +1,16 @@
+/// <reference types="@deafwave/osrs-botmaker-types" />
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
+
+// Types
+export type ColorScheme = {
+    BACKGROUND: java.awt.Color;
+    PANEL: java.awt.Color;
+    ACCENT: java.awt.Color;
+    TEXT: java.awt.Color;
+};
 
 export function createBasicWindow(
 	/** The window title */
@@ -70,6 +79,45 @@ export function createBasicWindow(
 	);
 	return { frame, panel, buttons: buttonMap };
 }
+
+// Start script button
+export const addStartButton = (
+    state: {
+        uiCompleted: boolean
+    },
+    frame: javax.swing.JFrame,
+    panel: javax.swing.JPanel,
+	colorScheme: ColorScheme
+) => {
+    const startButton = createButton(
+        'Start Script',
+        () => {
+			state.uiCompleted = true;
+            frame.dispose();
+		},
+        colorScheme.ACCENT,
+        colorScheme.TEXT,
+        '',
+        true,
+    ).panel;
+    panel.add(startButton, java.awt.BorderLayout.SOUTH);
+};
+
+// Main panel
+export const createMainPanel = (
+	colorScheme: ColorScheme,
+    panelTitle: string
+): javax.swing.JPanel => {
+    const mainPanel = createPanel(
+        'BorderLayout',
+        undefined,
+        { top: 15, left: 15, bottom: 15, right: 15 },
+        javax.swing.BorderFactory.createTitledBorder(panelTitle),
+    );
+    mainPanel.setBackground(colorScheme.BACKGROUND);
+    mainPanel.setForeground(colorScheme.TEXT);
+    return mainPanel;
+};
 
 export function createTextFieldWithLabel(
 	/** The text to display on the label. */
@@ -239,7 +287,7 @@ export function createButton(
 	const button: javax.swing.JButton = new javax.swing.JButton(buttonText);
 	button.addActionListener(() => {
 		onClick();
-		bot.printGameMessage('Button clicked');
+		// bot.printGameMessage('Button clicked');
 	});
 	if (backgroundColor) {
 		button.setBackground(backgroundColor);
@@ -296,59 +344,61 @@ export function createDropdown(
 	if (textColor) {
 		comboBox.setForeground(textColor);
 	}
+
 	comboBox.addActionListener(() => {
 		const selected = comboBox.getSelectedItem();
 		bot.bmCache.saveString(variableName, selected);
 	});
+
 	fixHeight(comboBox);
 	panel.add(comboBox, java.awt.BorderLayout.CENTER);
 	return { panel, comboBox };
 }
 
-/**
- * @param radioLabel: The text to display on the radio button
- * @param variableName: The internal variable name for the radio button state
- * @param value: The value this radio button represents
- * @param buttonGroup: The button group to add this radio to (optional)
- * @param defaultSelected: Default state of the radio button (default: false)
- * @param textColor: Text Color
- * @param tooltip: Tooltip text
- * @returns { panel: javax.swing.JPanel; radioButton: any }
- */
-export function createRadioButtons(
-	/** The text to display on the radio button */
-	radioLabels: string[],
-	/** The internal variable name for the radio button state */
-	variableName: string,
-	/** Text Color */
-	textColor?: java.awt.Color,
-): { panel: javax.swing.JPanel } {
-	const panel: javax.swing.JPanel = new javax.swing.JPanel(
-		new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 5, 0),
-	);
+// /**
+//  * @param radioLabel: The text to display on the radio button
+//  * @param variableName: The internal variable name for the radio button state
+//  * @param value: The value this radio button represents
+//  * @param buttonGroup: The button group to add this radio to (optional)
+//  * @param defaultSelected: Default state of the radio button (default: false)
+//  * @param textColor: Text Color
+//  * @param tooltip: Tooltip text
+//  * @returns { panel: javax.swing.JPanel; radioButton: any }
+//  */
+// export function createRadioButtons(
+// 	/** The text to display on the radio button */
+// 	radioLabels: string[],
+// 	/** The internal variable name for the radio button state */
+// 	variableName: string,
+// 	/** Text Color */
+// 	textColor?: java.awt.Color,
+// ): { panel: javax.swing.JPanel } {
+// 	const panel: javax.swing.JPanel = new javax.swing.JPanel(
+// 		new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 5, 0),
+// 	);
 
-	const cachedValue: string = bot.bmCache.getString(variableName, '');
-	const radioButtonGroup = new javax.swing.ButtonGroup();
-	for (const radioLabel of radioLabels) {
-		const isSelected: boolean =
-			JSON.stringify(cachedValue).toLocaleLowerCase().normalize() ===
-			JSON.stringify(radioLabel).toLocaleLowerCase().normalize();
+// 	const cachedValue: string = bot.bmCache.getString(variableName, '');
+// 	const radioButtonGroup = new javax.swing.ButtonGroup();
+// 	for (const radioLabel of radioLabels) {
+// 		const isSelected: boolean =
+// 			JSON.stringify(cachedValue).toLocaleLowerCase().normalize() ===
+// 			JSON.stringify(radioLabel).toLocaleLowerCase().normalize();
 
-		const radioButton = new javax.swing.JRadioButton(
-			radioLabel,
-			isSelected,
-		);
-		radioButtonGroup.add(radioButton);
-		if (textColor) {
-			radioButton.setForeground(textColor);
-		}
-		radioButton.addActionListener(() => {
-			bot.bmCache.saveString(variableName, radioLabel);
-		});
-		panel.add(radioButton);
-	}
-	return { panel };
-}
+// 		const radioButton = new javax.swing.JRadioButton(
+// 			radioLabel,
+// 			isSelected,
+// 		);
+// 		radioButtonGroup.add(radioButton);
+// 		if (textColor) {
+// 			radioButton.setForeground(textColor);
+// 		}
+// 		radioButton.addActionListener(() => {
+// 			bot.bmCache.saveString(variableName, radioLabel);
+// 		});
+// 		panel.add(radioButton);
+// 	}
+// 	return { panel };
+// }
 
 /**
  * @param labelText: The text to display on the label
@@ -565,9 +615,7 @@ export function createSplitPane(
 	return splitPane;
 }
 
-export function fixHeight(c: javax.swing.Component) {
-	const pref = c.getPreferredSize();
-	c.setMaximumSize(
-		new java.awt.Dimension(java.lang.Integer.MAX_VALUE, pref.height),
-	);
+export function fixHeight(c: javax.swing.JComponent) {
+    const pref = c.getPreferredSize();
+    c.setMaximumSize(new java.awt.Dimension(java.lang.Integer.MAX_VALUE, pref.height));
 }
