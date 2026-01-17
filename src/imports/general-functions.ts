@@ -46,6 +46,7 @@ export const generalFunctions = {
             scriptName: string
         }
     ): void => {
+        bot.breakHandler.setBreakHandlerStatus(false);
         bot.printGameMessage(`Terminating ${state.scriptName}.`);
         bot.walking.webWalkCancel(); // Cancel any web walking.
         bot.events.unregisterAll(); // Unregister all events.
