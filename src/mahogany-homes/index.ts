@@ -42,7 +42,7 @@ export const onGameTick = () => {
     try {
         if (!state.uiCompleted) return;
         state.contractType = bot.bmCache.getString('contractType', 'Beginner');
-        generalFunctions.gameTick(state);
+        if (!generalFunctions.gameTick(state)) return;
         stateManager();
     } catch (error) {
         logger(state, 'all', 'Script', (error as Error).toString());

@@ -16,7 +16,7 @@ export const generalFunctions = {
             gameTick: number,
             timeout: number
         }
-    ): void => {
+    ): boolean => {
         try {
             logger(state, 'debug', 'onGameTick', `Function start. Script game tick ${state.gameTick}`);
             state.gameTick++;
@@ -28,17 +28,19 @@ export const generalFunctions = {
             // Timeout logic.
             if (state.timeout > 0) {
                 state.timeout--;
-                return;
+                return false;
             }
             timeoutManager.tick();
-            if (timeoutManager.isWaiting()) return;
+            if (timeoutManager.isWaiting()) return false;
 
             // Antiban AFK and break logic.
-            if (state.antibanEnabled && antibanFunctions.afkTrigger(state)) return;
+            if (state.antibanEnabled && antibanFunctions.afkTrigger(state)) return false;
             bot.breakHandler.setBreakHandlerStatus(true);
+            return true;
         } catch (error) {
             logger(state, 'all', 'Script', (error as Error).toString());
             bot.terminate();
+            return false;
         }
     },
 

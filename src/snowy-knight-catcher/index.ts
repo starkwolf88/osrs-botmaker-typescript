@@ -29,7 +29,7 @@ export const onStart = () => logger(state, 'all', 'Script', `Starting ${state.sc
 
 export const onGameTick = () => {
     try {
-        generalFunctions.gameTick(state);
+        if (!generalFunctions.gameTick(state)) return;
         stateManager();
     } catch (error) {
         logger(state, 'all', 'Script', (error as Error).toString());

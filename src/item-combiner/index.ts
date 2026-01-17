@@ -24,13 +24,8 @@ const state = {
     timeout: 0,
     uiCompleted: false,
     scriptInitialised: false,
-
-    // GUI
-    // antibanEnabled: bot.variables.getBooleanVariable('[Setting] Antiban AFKs'),
-    // debugEnabled: bot.variables.getBooleanVariable('[Setting] Debug Enabled'),
-    // debugFullState: bot.variables.getBooleanVariable('[Setting] Debug Full State'),
     antibanEnabled: true,
-    debugEnabled: false,
+    debugEnabled: true,
     debugFullState: false
 };
 
@@ -53,7 +48,7 @@ export const onGameTick = () => {
         } else {
             return;
         }
-        generalFunctions.gameTick(state);
+        if (!generalFunctions.gameTick(state)) return;
         stateManager();
     } catch (error) {
         logger(state, 'all', 'Script', (error as Error).toString());
