@@ -29,8 +29,16 @@ const state = {
 export const onStart = () => logger(state, 'all', 'Script', `Starting ${state.scriptName}.`);
 
 export const onGameTick = () => {
+
+    // Breaks disabled
+    bot.breakHandler.setBreakHandlerStatus(false);
+
     try {
         if (!generalFunctions.gameTick(state)) return;
+
+        // Enable break if idle, not walking and the `main_state` is `open_bank`.
+        if (bot.localPlayerIdle() && !bot.walking.isWebWalking() && state.main_state == 'open_bank') bot.breakHandler.setBreakHandlerStatus(true);
+
         stateManager();
     } catch (error) {
         logger(state, 'all', 'Script', (error as Error).toString());
