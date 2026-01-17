@@ -107,10 +107,3 @@ const stateManager = () => {
         }
     }
 };
-
-
-/*** REMOVE FROM CONVERTED JS */
-onStart();
-onGameTick();
-onEnd();
-/*** REMOVE FROM CONVERTED JS */

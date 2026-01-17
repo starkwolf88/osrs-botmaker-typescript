@@ -446,10 +446,3 @@ const objectFunctions = {
 
 /** UTILITY FUNCTIONS **/
 const randomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
-
-
-// NEEDS REMOVING FROM LIVE CODE
-onStart();
-onGameTick();
-onEnd();
-// NEEDS REMOVING FROM LIVE CODE
