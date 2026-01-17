@@ -105,6 +105,9 @@ const stateManager = () => {
         case 'open_bank': {
             if (!bot.localPlayerIdle()) break;
 
+            // Open the bank.
+            openBankTimeout();
+
             // Timeout until bank is open.
             if (!bot.bank.isOpen()) {
                 timeoutManager.add({
@@ -189,6 +192,9 @@ const stateManager = () => {
         case 'close_bank': {
             if (!bot.localPlayerIdle()) break;
 
+            // Close the bank
+            closeBankTimeout();
+
             // Timeout until bank is closed. Reset to `open_bank` if not closed after 3 attempts.
             if (bot.bank.isOpen()) {
                 timeoutManager.add({
@@ -220,6 +226,9 @@ const stateManager = () => {
                 state.main_state = 'open_bank';
                 break;
             }
+            
+            // Use items on each other.
+            itemInteractTimeout();
 
             // Determine if a make item interface exists for this combination and select it.
             const widgetData = itemCombinationData.make_widget_data;
