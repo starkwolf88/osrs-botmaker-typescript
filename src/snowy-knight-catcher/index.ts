@@ -191,8 +191,23 @@ const stateManager = () => {
         
         // Withdraw stamina potion from the bank
         case 'withdraw_stamina': {
-            if (state.useStaminas) {
-                //
+            if (state.useStaminas && !bot.inventory.containsId(itemIds.stamina_potion_4) && bot.bank.getQuantityOfId(itemIds.stamina_potion_4)) {
+                bot.bank.withdrawAllWithId(itemIds.stamina_potion_4);
+                timeoutManager.add({
+                    state,
+                    conditionFunction: () => bot.inventory.containsId(itemIds.stamina_potion_4),
+                    action:() => {
+                        logger(state, 'debug', `stateManager: ${state.main_state}`, 'Withdrawing Stamina potion (4).');
+                        bot.bank.withdrawAllWithId(itemIds.stamina_potion_4);
+                    },
+                    maxWait: 10,
+                    maxAttempts: 3,
+                    retryTimeout: 3,
+                    onFail: () => {
+                        logger(state, 'all', `stateManager: ${state.main_state}`, 'Failed to withdraw Stamina potion (4) after 3 attempts and 10 ticks.');
+                        state.main_state = 'open_bank';
+                    }
+                });
             }
 
             // Assign next state.
