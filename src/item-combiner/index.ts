@@ -16,7 +16,7 @@ import {timeoutManager} from 'src/imports/timeout-manager.js';
 // Variables
 const state = {
     scriptName: '[Stark] Item Combiner',
-    main_state: 'start_state',
+    main_state: 'open_bank',
     itemCombinationData: undefined as ItemCombinationData | undefined,
     antibanTriggered: false,
     startDepositAllCompleted: false,
@@ -41,6 +41,10 @@ export const onStart = () => {
 };
 
 export const onGameTick = () => {
+
+    // Breaks disabled
+    bot.breakHandler.setBreakHandlerStatus(false);
+
     try {
         if (state.uiCompleted) {
             if (!state.scriptInitialised) getGuiItemCombinationData();
@@ -49,6 +53,10 @@ export const onGameTick = () => {
             return;
         }
         if (!generalFunctions.gameTick(state)) return;
+
+        // Enable break if idle, not walking and the `main_state` is `open_bank`.
+        if (bot.localPlayerIdle() && !bot.walking.isWebWalking() && state.main_state == 'open_bank') bot.breakHandler.setBreakHandlerStatus(true);
+
         stateManager();
     } catch (error) {
         logger(state, 'all', 'Script', (error as Error).toString());
@@ -94,7 +102,7 @@ const stateManager = () => {
     switch(state.main_state) {
 
         // Starting state of the script. Open the bank.
-        case 'start_state': {
+        case 'open_bank': {
             if (!bot.localPlayerIdle()) break;
 
             // Timeout until bank is open.
@@ -106,7 +114,7 @@ const stateManager = () => {
                     maxWait: 10,
                     maxAttempts: 3,
                     retryTimeout: 3,
-                    onFail: () => {throw new Error('Bank did not open during `start_state` after 3 attempts and 10 ticks.')}
+                    onFail: () => {throw new Error('Bank did not open during `open_bank` after 3 attempts and 10 ticks.')}
                 });
                 break;
             }
@@ -118,7 +126,7 @@ const stateManager = () => {
 
         // Deposit items into the bank.
         case 'deposit_items': {
-            if (!bankFunctions.requireBankOpen(state, 'start_state') || !bot.localPlayerIdle()) break;
+            if (!bankFunctions.requireBankOpen(state, 'open_bank') || !bot.localPlayerIdle()) break;
 
             // Deposit items.
             logger(state, 'debug', `stateManager: ${state.main_state}`, 'Depositing items.');
@@ -132,7 +140,7 @@ const stateManager = () => {
 
         // Check bank item quantities are sufficient for item combining.
         case 'check_bank_quantities': {
-            if (!bankFunctions.requireBankOpen(state, 'start_state') || !bot.localPlayerIdle()) break;
+            if (!bankFunctions.requireBankOpen(state, 'open_bank') || !bot.localPlayerIdle()) break;
 
             // Check item quantities in the bank.
             logger(state, 'debug', `stateManager: ${state.main_state}`, 'Checking bank item quantities.');
@@ -145,14 +153,14 @@ const stateManager = () => {
 
         // Withdraw items from the bank.
         case 'withdraw_items': {
-            if (!bankFunctions.requireBankOpen(state, 'start_state') || !bot.localPlayerIdle()) break;
+            if (!bankFunctions.requireBankOpen(state, 'open_bank') || !bot.localPlayerIdle()) break;
 
             // Withdraw missing items.
             if (bankFunctions.withdrawMissingItems(state, itemCombinationData.items)) break; 
 
-            // If the inventory doesn't contain all items, reset to `start_state`.
+            // If the inventory doesn't contain all items, reset to `open_bank`.
             if (!bot.inventory.containsAllIds(itemCombinationData.items.map(item => item.id))) {
-                state.main_state = 'start_state';
+                state.main_state = 'open_bank';
                 break;
             }
 
@@ -165,10 +173,10 @@ const stateManager = () => {
         case 'validate_inventory_quantities': {
             if (!bot.localPlayerIdle()) break;
     
-            // If inventory quantities do not match the required quantities, go back to `start_state`.
+            // If inventory quantities do not match the required quantities, go back to `open_bank`.
             logger(state, 'debug', `stateManager: ${state.main_state}`, 'Checking inventory item quantities.');
             if (!inventoryFunctions.checkQuantitiesMatch(itemCombinationData.items.map(item => ({itemId: item.id, quantity: item.quantity})))) {
-                state.main_state = 'start_state';
+                state.main_state = 'open_bank';
                 break;
             }
 
@@ -181,7 +189,7 @@ const stateManager = () => {
         case 'close_bank': {
             if (!bot.localPlayerIdle()) break;
 
-            // Timeout until bank is closed. Reset to `start_state` if not closed after 3 attempts.
+            // Timeout until bank is closed. Reset to `open_bank` if not closed after 3 attempts.
             if (bot.bank.isOpen()) {
                 timeoutManager.add({
                     state,
@@ -192,7 +200,7 @@ const stateManager = () => {
                     retryTimeout: 3,
                     onFail: () => {
                         logger(state, 'debug', `stateManager: ${state.main_state}`, 'Bank did not close after 3 attempts and 10 ticks.');
-                        state.main_state = 'start_state';
+                        state.main_state = 'open_bank';
                     }
                 });
                 break;
@@ -207,9 +215,9 @@ const stateManager = () => {
         case 'item_interact': {
             if (!bankFunctions.requireBankClosed(state, 'close_bank') || !bot.localPlayerIdle()) break;
 
-            // If the inventory doesn't contain all items, reset to `start_state`.
+            // If the inventory doesn't contain all items, reset to `open_bank`.
             if (!bot.inventory.containsAllIds(itemCombinationData.items.map(item => item.id))) {
-                state.main_state = 'start_state';
+                state.main_state = 'open_bank';
                 break;
             }
 
@@ -237,13 +245,13 @@ const stateManager = () => {
 
             // Timeout so that items can combine, then loop back around to script starting state.
             state.timeout = itemCombinationData.timeout;
-            state.main_state = 'start_state';
+            state.main_state = 'open_bank';
             break;
         }
 
         // Default to start state.
         default: {
-            state.main_state = 'start_state';
+            state.main_state = 'open_bank';
             break;
         }
     }
