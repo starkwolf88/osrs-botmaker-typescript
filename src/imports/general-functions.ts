@@ -22,9 +22,6 @@ export const generalFunctions = {
             state.gameTick++;
             if (state.debugEnabled && state.debugFullState) debugFunctions.stateDebugger(state);
 
-            // Break logic.
-            bot.breakHandler.setBreakHandlerStatus(false);
-
             // Timeout logic.
             if (state.timeout > 0) {
                 state.timeout--;
@@ -35,7 +32,6 @@ export const generalFunctions = {
 
             // Antiban AFK and break logic.
             if (state.antibanEnabled && antibanFunctions.afkTrigger(state)) return false;
-            bot.breakHandler.setBreakHandlerStatus(true);
             return true;
         } catch (error) {
             logger(state, 'all', 'Script', (error as Error).toString());
