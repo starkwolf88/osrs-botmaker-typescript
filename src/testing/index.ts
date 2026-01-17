@@ -1,4 +1,4 @@
-const onGameTick = () => {
+export const onGameTick = () => {
     const widget = client.getWidget(17694736);
     if (widget) {
         bot.printLogMessage('WIDGET SHOWING')

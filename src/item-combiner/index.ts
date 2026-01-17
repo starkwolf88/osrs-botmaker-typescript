@@ -35,7 +35,7 @@ const state = {
 };
 
 // Functions
-const onStart = () => {
+export const onStart = () => {
     try {
         createUi(state);
         logger(state, 'all', 'Script', `Starting ${state.scriptName}.`);
@@ -45,7 +45,7 @@ const onStart = () => {
     }
 };
 
-const onGameTick = () => {
+export const onGameTick = () => {
     try {
         if (state.uiCompleted) {
             if (!state.scriptInitialised) getGuiItemCombinationData();
@@ -61,7 +61,7 @@ const onGameTick = () => {
     }
 };
 
-const onEnd = () => generalFunctions.endScript(state);
+export const onEnd = () => generalFunctions.endScript(state);
 
 const getGuiItemCombinationData = () => {
     const itemCombination = itemCombinationData.find(itemCombination => itemCombination.combined_item_name.toLowerCase() == bot.bmCache.getString('itemCombination', 'Maple longbow (u)').toLowerCase());
@@ -258,10 +258,3 @@ const stateManager = () => {
         }
     }
 };
-
-
-/*** REMOVE FROM CONVERTED JS */
-onStart();
-onGameTick();
-onEnd();
-/*** REMOVE FROM CONVERTED JS */

@@ -25,9 +25,9 @@ const state = {
 };
 
 // Functions
-const onStart = () => logger(state, 'all', 'Script', `Starting ${state.scriptName}.`);
+export const onStart = () => logger(state, 'all', 'Script', `Starting ${state.scriptName}.`);
 
-const onGameTick = () => {
+export const onGameTick = () => {
     try {
         generalFunctions.gameTick(state);
         stateManager();
@@ -37,7 +37,7 @@ const onGameTick = () => {
     }
 };
 
-const onEnd = () => generalFunctions.endScript(state);
+export const onEnd = () => generalFunctions.endScript(state);
 
 const scriptLocations = {
     quetzacaliGorgeBank: utilityFunctions.coordsToWorldPoint(locationCoords.quetzacali_gorge.bank),

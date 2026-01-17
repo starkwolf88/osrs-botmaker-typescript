@@ -28,7 +28,7 @@ const state = {
 };
 
 // Functions
-const onStart = () => {
+export const onStart = () => {
     try {
         createUi(state);
         logger(state, 'all', 'Script', `Starting ${state.scriptName}.`);
@@ -38,7 +38,7 @@ const onStart = () => {
     }
 };
 
-const onGameTick = () => {
+export const onGameTick = () => {
     try {
         if (!state.uiCompleted) return;
         state.contractType = bot.bmCache.getString('contractType', 'Beginner');
@@ -50,7 +50,7 @@ const onGameTick = () => {
     }
 };
 
-const onEnd = () => generalFunctions.endScript(state);
+export const onEnd = () => generalFunctions.endScript(state);
 
 const scriptLocations = {
     startLocation: utilityFunctions.coordsToWorldPoint(locationCoords.falador.mahogany_homes),

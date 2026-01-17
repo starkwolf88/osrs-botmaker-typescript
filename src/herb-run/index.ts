@@ -150,10 +150,10 @@ const herbPatches = [
 
 /** MAIN FUNCTIONS */
 // onStart()
-const onStart = () => bot.printGameMessage('Starting herb run.');
+export const onStart = () => bot.printGameMessage('Starting herb run.');
 
 // onGameTick()
-const onGameTick = () => {
+export const onGameTick = () => {
 
     // Decrement timeout and return if timeout is greater than 0 or the player is not idle.
     if (timeout > 0 || !bot.localPlayerIdle()) {
@@ -166,7 +166,7 @@ const onGameTick = () => {
 };
 
 // onEnd()
-const onEnd = () => {
+export const onEnd = () => {
     bot.printGameMessage(`Stopping herb run. Manually stopped.`);
     bot.walking.webWalkCancel(); // Cancel any web walking.
     bot.events.unregisterAll(); // Unregister all events.
