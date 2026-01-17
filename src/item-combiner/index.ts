@@ -65,6 +65,24 @@ const getGuiItemCombinationData = () => {
     state.itemCombinationData = itemCombination;
 };
 
+// Timeout functions.
+const openBankTimeout = () => {
+    logger(state, 'debug', `stateManager: ${state.main_state}`, 'Opening the bank');
+    bot.bank.open();
+};
+const closeBankTimeout = () => {
+    logger(state, 'debug', `stateManager: ${state.main_state}`, 'Closing the bank');
+    bot.bank.close();
+};
+const itemInteractTimeout = () => {
+    const itemCombinationData = state.itemCombinationData;
+    if (!itemCombinationData) throw new Error('Item combination not initialized');
+    const item1 = itemCombinationData.items[0];
+    const item2 = itemCombinationData.items[1];
+    logger(state, 'debug', `stateManager: ${state.main_state}`, `Combining ${utilityFunctions.convertToTitleCase(item1.name)} with ${utilityFunctions.convertToTitleCase(item2.name)}. Timeout: ${itemCombinationData.timeout}.`);
+    bot.inventory.itemOnItemWithIds(item1.id, item2.id);
+}
+
 const stateManager = () => {
     logger(state, 'debug', `stateManager: ${state.main_state}`, `Function start.`);
 
@@ -79,19 +97,12 @@ const stateManager = () => {
         case 'start_state': {
             if (!bot.localPlayerIdle()) break;
 
-            // Timeout action.
-            const startStateTimeoutAction = () => {
-                logger(state, 'debug', `stateManager: ${state.main_state}`, 'Opening the bank');
-                bot.bank.open();
-            };
-            startStateTimeoutAction();
-
             // Timeout until bank is open.
             if (!bot.bank.isOpen()) {
                 timeoutManager.add({
                     state,
                     conditionFunction: () => bot.bank.isOpen(),
-                    action: () => startStateTimeoutAction(),
+                    action: () => openBankTimeout(),
                     maxWait: 10,
                     maxAttempts: 3,
                     retryTimeout: 3,
@@ -170,19 +181,12 @@ const stateManager = () => {
         case 'close_bank': {
             if (!bot.localPlayerIdle()) break;
 
-            // Timeout action.
-            const closeBankTimeoutAction = () => {
-                logger(state, 'debug', `stateManager: ${state.main_state}`, 'Closing the bank');
-                bot.bank.close();
-            };
-            closeBankTimeoutAction();
-
             // Timeout until bank is closed. Reset to `start_state` if not closed after 3 attempts.
             if (bot.bank.isOpen()) {
                 timeoutManager.add({
                     state,
                     conditionFunction: () => !bot.bank.isOpen(),
-                    action: () => closeBankTimeoutAction(),
+                    action: () => closeBankTimeout(),
                     maxWait: 10,
                     maxAttempts: 3,
                     retryTimeout: 3,
@@ -209,15 +213,6 @@ const stateManager = () => {
                 break;
             }
 
-            // Create item interact function.
-            const item1 = itemCombinationData.items[0];
-            const item2 = itemCombinationData.items[1];
-            const itemInteractTimeoutAction = () => {
-                logger(state, 'debug', `stateManager: ${state.main_state}`, `Combining ${utilityFunctions.convertToTitleCase(item1.name)} with ${utilityFunctions.convertToTitleCase(item2.name)}. Timeout: ${itemCombinationData.timeout}.`);
-                bot.inventory.itemOnItemWithIds(item1.id, item2.id);
-            }
-            itemInteractTimeoutAction();
-
             // Determine if a make item interface exists for this combination and select it.
             const widgetData = itemCombinationData.make_widget_data;
             if (widgetData) {
@@ -227,7 +222,7 @@ const stateManager = () => {
                     timeoutManager.add({
                         state,
                         conditionFunction: () => client.getWidget(widgetData.packed_widget_id) !== null,
-                        action: () => itemInteractTimeoutAction(),
+                        action: () => itemInteractTimeout(),
                         maxWait: 10,
                         maxAttempts: 3,
                         retryTimeout: 3,
