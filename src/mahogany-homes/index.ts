@@ -39,10 +39,18 @@ export const onStart = () => {
 };
 
 export const onGameTick = () => {
+
+    // Breaks disabled
+    bot.breakHandler.setBreakHandlerStatus(false);
+
     try {
         if (!state.uiCompleted) return;
         state.contractType = bot.bmCache.getString('contractType', 'Beginner');
         if (!generalFunctions.gameTick(state)) return;
+
+        // Enable break if idle, not walking and the `main_state` is `open_bank`.
+        // if (bot.localPlayerIdle() && !bot.walking.isWebWalking() && state.main_state == 'open_bank') bot.breakHandler.setBreakHandlerStatus(true);
+
         stateManager();
     } catch (error) {
         logger(state, 'all', 'Script', (error as Error).toString());
