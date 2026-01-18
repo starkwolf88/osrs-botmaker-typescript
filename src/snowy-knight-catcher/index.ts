@@ -1,6 +1,3 @@
-// To-do
-// Add UI and checkbox for 'use staminas'
-
 // Data imports
 import {itemIds} from '../imports/item-ids.js';
 import {locationCoords} from 'src/imports/location-coords.js';
@@ -31,7 +28,7 @@ const state = {
     timeout: 0,
 
     // Optional
-    useStaminas: true
+    useStaminas: bot.variables.getBooleanVariable('Use Staminas')
 };
 
 // Functions
@@ -91,7 +88,7 @@ const stateManager = () => {
                     state,
                     conditionFunction: () => isPlayerAtSnowyWhites(),
                     maxWait: 200,
-                    onFail: () => {throw new Error('Unable to find start point after 200 ticks.')}
+                    onFail: () => generalFunctions.handleFailure(state, `stateManager: ${state.main_state}`, 'Unable to locate player at Mons Gratia after 200 ticks.')
                 });
                 break;
             }
@@ -140,7 +137,7 @@ const stateManager = () => {
                     state,
                     conditionFunction: () => isPlayerAtBank(),
                     maxWait: 200,
-                    onFail: () => {throw new Error('Unable to find Quetzacali Gorge bank after 200 ticks.')}
+                    onFail: () => generalFunctions.handleFailure(state, `stateManager: ${state.main_state}`, 'Unable to find Quetzacali Gorge bank after 200 ticks.')
                 });
                 break;
             }
@@ -161,12 +158,7 @@ const stateManager = () => {
         // Deposit items into the bank.
         case 'deposit_items': {
             if (!bankFunctions.requireBankOpen(state, 'open_bank') || !bot.localPlayerIdle()) break;
-
-            // Deposit items.
-            logger(state, 'debug', `stateManager: ${state.main_state}`, 'Depositing items.');
-            bot.bank.depositAll();
-
-            // Assign next state.
+            if (!bankFunctions.depositAllItems(state, 0, 'close_bank')) break;
             state.main_state = 'check_bank_quantities';
             break;
         }
@@ -174,57 +166,30 @@ const stateManager = () => {
         // Check bank item quantities are sufficient.
         case 'check_bank_quantities': {
             if (!bankFunctions.requireBankOpen(state, 'open_bank') || !bot.localPlayerIdle()) break;
-
-            // Check item quantities in the bank.
             logger(state, 'debug', `stateManager: ${state.main_state}`, 'Checking butterfly jar quantity.');
             if (bankFunctions.isQuantityLow(itemIds.butterfly_jar, 1)) throw new Error('Ran out of Butterfly jars.');
-
-            // Assign next state.
-            state.main_state = 'withdraw_stamina';
+            state.useStaminas ? state.main_state = 'withdraw_stamina' : state.main_state = 'withdraw_jars';
             break;
         }
-        
-        // Withdraw stamina potion from the bank
-        case 'withdraw_stamina': {
-            if (state.useStaminas && !bot.inventory.containsId(itemIds.stamina_potion_4) && bot.bank.getQuantityOfId(itemIds.stamina_potion_4)) {
-                logger(state, 'debug', `stateManager: ${state.main_state}`, 'Withdrawing Stamina potion (4).');
-                bot.bank.withdrawAllWithId(itemIds.stamina_potion_4);
-                timeoutManager.add({
-                    state,
-                    conditionFunction: () => bot.inventory.containsId(itemIds.stamina_potion_4),
-                    maxWait: 10,
-                    onFail: () => {
-                        logger(state, 'all', `stateManager: ${state.main_state}`, 'Failed to withdraw Stamina potion (4) after 3 attempts and 10 ticks.');
-                        state.main_state = 'open_bank';
-                    }
-                });
-            }
 
-            // Assign next state.
+        // Withdraw stamina potion from the bank. Reset to `close_bank` on failure.
+        case 'withdraw_stamina': {
+            if (!bankFunctions.requireBankOpen(state, 'open_bank') || !bot.localPlayerIdle() || bot.bank.isBanking()) break;
+            if (bankFunctions.withdrawMissingItems(state, [{id: itemIds.stamina_potion_4, quantity: 1}], 'close_bank')) break; 
             state.main_state = 'withdraw_jars';
             break;
         }
 
-        // Withdraw Butterfly jars from the bank.
+        // Withdraw butterfly jars items. Reset to `close_bank` on failure.
         case 'withdraw_jars': {
-            if (!bankFunctions.requireBankOpen(state, 'open_bank') || !bot.localPlayerIdle()) break;
+            if (!bankFunctions.requireBankOpen(state, 'open_bank') || !bot.localPlayerIdle() || bot.bank.isBanking()) break;
+            if (bankFunctions.withdrawMissingItems(state, [{id: itemIds.butterfly_jar, quantity: 'all'}], 'close_bank')) break; 
+            state.main_state = 'walk_to_snowy_whites';
+            break;
+        }
 
-            // Withdraw Butterfly jars.
-            if (!bot.inventory.containsId(itemIds.butterfly_jar)) {
-                logger(state, 'debug', `stateManager: ${state.main_state}`, 'Withdrawing Butterfly jars.');
-                bot.bank.withdrawAllWithId(itemIds.butterfly_jar);
-                timeoutManager.add({
-                    state,
-                    conditionFunction: () => bot.inventory.containsId(itemIds.butterfly_jar),
-                    maxWait: 10,
-                    onFail: () => {
-                        logger(state, 'all', `stateManager: ${state.main_state}`, 'Failed to withdraw Butterfly jars after 3 attempts and 10 ticks.');
-                        state.main_state = 'open_bank';
-                    }
-                });
-            }
-
-            // Assign next state.
+        // Default to start state.
+        default: {
             state.main_state = 'walk_to_snowy_whites';
             break;
         }
