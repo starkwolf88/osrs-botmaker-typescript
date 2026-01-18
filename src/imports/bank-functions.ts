@@ -102,6 +102,7 @@ export const bankFunctions = {
                 timeoutManager.add({
                     state,
                     conditionFunction: () => bot.inventory.containsId(item.id),
+                    initialTimeout: 1,
                     maxWait: 10,
                     onFail: () => generalFunctions.handleFailure(state, 'bankFunctions.withdrawMissingItems', `Failed to withdraw item ID ${item.id} after 10 ticks.`, failResetState)
                 });
@@ -127,6 +128,7 @@ export const bankFunctions = {
             timeoutManager.add({
                 state,
                 conditionFunction: () => currentEmptySlots < bot.inventory.getEmptySlots(),
+                initialTimeout: 1,
                 maxWait: 10,
                 onFail: () => generalFunctions.handleFailure(state, 'bankFunctions.depositAllItems', `Failed to deposit ${itemId ? `item ID ${itemId}` : 'all items'} after 10 ticks.`, failResetState)
             });
