@@ -22,7 +22,7 @@ const state = {
     // Core
     antibanEnabled: true,
     antibanTriggered: false,
-    debugEnabled: true,
+    debugEnabled: false,
     debugFullState: false,
     failure_location: '',
     gameTick: 0,
@@ -98,23 +98,17 @@ const stateManager = () => {
         case 'open_bank': {
             if (!bot.localPlayerIdle()) break;
             if (!bankFunctions.openBank(state)) break;
-
-            // Assign next state.
             state.main_state = 'deposit_items';
             break;
         }
 
-        // Deposit items into the bank.
+        // Deposit items. Reset to `close_bank` on failure.
         case 'deposit_items': {
             if (!bankFunctions.requireBankOpen(state, 'open_bank') || !bot.localPlayerIdle()) break;
-
-            // Deposit items. Reset to `close_bank` on failure.
             let depositItemId = itemCombinationData.combined_item_id;
             if (itemCombinationData.deposit_all || !state.startDepositAllCompleted) depositItemId = 0; // 0 = deposit all
             if (!bankFunctions.depositAllItems(state, depositItemId, 'close_bank')) break;
             state.startDepositAllCompleted = true;
-
-            // Assign next state.
             state.main_state = 'check_bank_quantities';
             break;
         }
@@ -122,39 +116,27 @@ const stateManager = () => {
         // Check bank item quantities are sufficient for item combining.
         case 'check_bank_quantities': {
             if (!bankFunctions.requireBankOpen(state, 'open_bank') || !bot.localPlayerIdle()) break;
-
-            // Check item quantities in the bank.
             logger(state, 'debug', `stateManager: ${state.main_state}`, 'Checking bank item quantities.');
             if (bankFunctions.anyQuantitiyLow(itemCombinationData.items)) throw new Error('Ran out of items to combine.');
-
-            // Assign next state.
             state.main_state = 'withdraw_items';
             break;
         }
 
-        // Withdraw items from the bank.
+        // Withdraw missing items. Reset to `close_bank` on failure.
         case 'withdraw_items': {
             if (!bankFunctions.requireBankOpen(state, 'open_bank') || !bot.localPlayerIdle() || bot.bank.isBanking()) break;
-
-            // Withdraw missing items. Reset to `close_bank` on failure.
             if (bankFunctions.withdrawMissingItems(state, itemCombinationData.items, 'close_bank')) break; 
-
-            // Assign next state.
             state.main_state = 'validate_inventory_quantities';
             break;
         }
 
-        // Validate inventory item quantities.
+        // If inventory quantities do not match the required quantities, reset state to `open_bank`.
         case 'validate_inventory_quantities': {
             if (!bot.localPlayerIdle()) break;
-    
-            // If inventory quantities do not match the required quantities, reset state to `open_bank`.
             if (!inventoryFunctions.checkQuantitiesMatch(state, itemCombinationData.items.map(item => ({itemId: item.id, quantity: item.quantity})))) {
                 generalFunctions.handleFailure(state, `stateManager: ${state.main_state}`, 'Inventory quantities do not match required quantities.', 'open_bank');
                 break;
             }
-
-            // Assign next state.
             state.main_state = 'close_bank';
             break;
         }
@@ -163,8 +145,6 @@ const stateManager = () => {
         case 'close_bank': {
             if (!bot.localPlayerIdle()) break;
             if (!bankFunctions.closeBank(state)) break;
-
-            // Assign next state.
             state.main_state = 'item_interact';
             break;
         }
@@ -191,8 +171,6 @@ const stateManager = () => {
             // Timeout so that items can combine, then loop back around to script starting state.
             state.timeout = itemCombinationData.timeout;
             logger(state, 'debug', `stateManager: ${state.main_state}`, `Combining ${utilityFunctions.convertToTitleCase(item1.name)} with ${utilityFunctions.convertToTitleCase(item2.name)}. Timeout: ${itemCombinationData.timeout}.`);
-         
-            // Assign next state.
             state.main_state = 'open_bank';
             break;
         }
