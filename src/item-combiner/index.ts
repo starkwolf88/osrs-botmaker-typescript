@@ -18,10 +18,10 @@ const state = {
     scriptName: '[Stark] Item Combiner',
     main_state: 'open_bank',
     itemCombinationData: undefined as ItemCombinationData | undefined,
-    antibanTriggered: false,
-    startDepositAllCompleted: false,
     gameTick: 0,
     timeout: 0,
+    antibanTriggered: false,
+    startDepositAllCompleted: false,
     uiCompleted: false,
     scriptInitialised: false,
     antibanEnabled: true,
@@ -54,8 +54,8 @@ export const onGameTick = () => {
         }
         if (!generalFunctions.gameTick(state)) return;
 
-        // Enable break if idle, not walking and the `main_state` is `open_bank`.
-        if (bot.localPlayerIdle() && !bot.walking.isWebWalking() && state.main_state == 'open_bank') bot.breakHandler.setBreakHandlerStatus(true);
+        // Enable break if not banking, idle, not walking and the `main_state` is `open_bank`.
+        if (!bot.bank.isBanking() && bot.localPlayerIdle() && !bot.walking.isWebWalking() && state.main_state == 'open_bank') bot.breakHandler.setBreakHandlerStatus(true);
 
         stateManager();
     } catch (error) {
@@ -105,19 +105,17 @@ const stateManager = () => {
         case 'open_bank': {
             if (!bot.localPlayerIdle()) break;
 
-            // Open the bank.
-            openBankTimeout();
-
             // Timeout until bank is open.
             if (!bot.bank.isOpen()) {
+
+                // Open the bank.
+                openBankTimeout();
+                state.timeout = 1;
                 timeoutManager.add({
                     state,
                     conditionFunction: () => bot.bank.isOpen(),
-                    action: () => openBankTimeout(),
                     maxWait: 10,
-                    maxAttempts: 3,
-                    retryTimeout: 3,
-                    onFail: () => {throw new Error('Bank did not open during `open_bank` after 3 attempts and 10 ticks.')}
+                    onFail: () => {throw new Error('Bank did not open during `open_bank` after 10 ticks.')}
                 });
                 break;
             }
@@ -156,10 +154,10 @@ const stateManager = () => {
 
         // Withdraw items from the bank.
         case 'withdraw_items': {
-            if (!bankFunctions.requireBankOpen(state, 'open_bank') || !bot.localPlayerIdle()) break;
+            if (!bankFunctions.requireBankOpen(state, 'open_bank') || !bot.localPlayerIdle() || bot.bank.isBanking()) break;
 
             // Withdraw missing items.
-            if (bankFunctions.withdrawMissingItems(state, itemCombinationData.items)) break; 
+            if (bankFunctions.withdrawMissingItems(state, itemCombinationData.items, 'close_bank')) break; 
 
             // If the inventory doesn't contain all items, reset to `open_bank`.
             if (!bot.inventory.containsAllIds(itemCombinationData.items.map(item => item.id))) {
@@ -192,22 +190,18 @@ const stateManager = () => {
         case 'close_bank': {
             if (!bot.localPlayerIdle()) break;
 
-            // Close the bank
-            closeBankTimeout();
-
             // Timeout until bank is closed. Reset to `open_bank` if not closed after 3 attempts.
             if (bot.bank.isOpen()) {
+
+                // Close the bank
+                closeBankTimeout();
+                state.timeout = 1;
                 timeoutManager.add({
                     state,
                     conditionFunction: () => !bot.bank.isOpen(),
                     action: () => closeBankTimeout(),
                     maxWait: 10,
-                    maxAttempts: 3,
-                    retryTimeout: 3,
-                    onFail: () => {
-                        logger(state, 'debug', `stateManager: ${state.main_state}`, 'Bank did not close after 3 attempts and 10 ticks.');
-                        state.main_state = 'open_bank';
-                    }
+                    onFail: () => {throw new Error('Bank did not close after 10 ticks.')}
                 });
                 break;
             }
@@ -236,6 +230,7 @@ const stateManager = () => {
 
                 // Timeout until the widget is visible.
                 if (!client.getWidget(widgetData.packed_widget_id)) {
+                    state.timeout = 1;
                     timeoutManager.add({
                         state,
                         conditionFunction: () => client.getWidget(widgetData.packed_widget_id) !== null,
