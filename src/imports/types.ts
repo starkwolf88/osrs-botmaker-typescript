@@ -3,7 +3,7 @@ export type State = {
     // Core
     antibanEnabled: boolean;
     antibanTriggered: boolean;
-    failure_location: string,
+    failure_origin: string,
     debugEnabled: boolean;
     debugFullState: boolean;
     gameTick: number;
