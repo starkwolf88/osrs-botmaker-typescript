@@ -1,3 +1,6 @@
+// To-do
+// Add UI and checkbox for 'use staminas'
+
 // Data imports
 import {itemIds} from '../imports/item-ids.js';
 import {locationCoords} from 'src/imports/location-coords.js';
@@ -14,15 +17,21 @@ import {utilityFunctions} from 'src/imports/utility-functions.js';
 
 // Variables
 const state = {
-    scriptName: '[Stark] Snowy Knight Catcher',
-    main_state: 'walk_to_snowy_whites',
-    gameTick: 0,
-    timeout: 0,
-    useStaminas: true,
-    antibanTriggered: false,
+
+    // Core
     antibanEnabled: true,
+    antibanTriggered: false,
     debugEnabled: false,
-    debugFullState: false
+    debugFullState: false,
+    failure_location: '',
+    gameTick: 0,
+    main_state: 'walk_to_snowy_whites',
+    scriptName: '[Stark] Snowy Knight Catcher',
+    stuck_count: 0,
+    timeout: 0,
+
+    // Optional
+    useStaminas: true
 };
 
 // Functions
@@ -57,10 +66,6 @@ const scriptLocations = {
 const isPlayerAtSnowyWhites = () => locationFunctions.isPlayerNearWorldPoint(scriptLocations.monsGratiaSnowyWhiteArea)
 const getSnowyWhiteCount = () => bot.inventory.getQuantityOfId(itemIds.snowy_knight);
 const isPlayerAtBank = () => locationFunctions.isPlayerNearWorldPoint(scriptLocations.quetzacaliGorgeBank);
-const openBankActionTimeout = () => {
-    logger(state, 'debug', `stateManager: ${state.main_state}`, 'Opening the bank');
-    bot.bank.open();
-};
 
 const stateManager = () => {
     logger(state, 'debug', `stateManager: ${state.main_state}`, `Function start.`);
@@ -148,25 +153,7 @@ const stateManager = () => {
         // Open the bank.
         case 'open_bank': {
             if (!bot.localPlayerIdle()) break;
-
-            // Timeout action.
-            openBankActionTimeout();
-
-            // Timeout until bank is open.
-            if (!bot.bank.isOpen()) {
-                timeoutManager.add({
-                    state,
-                    conditionFunction: () => bot.bank.isOpen(),
-                    action: () => openBankActionTimeout(),
-                    maxWait: 10,
-                    maxAttempts: 3,
-                    retryTimeout: 3,
-                    onFail: () => {throw new Error('Bank did not open during `open_bank` after 3 attempts and 10 ticks.')}
-                });
-                break;
-            }
-
-            // Assign next state.
+            if (!bankFunctions.openBank(state)) break;
             state.main_state = 'deposit_items';
             break;
         }
@@ -200,17 +187,12 @@ const stateManager = () => {
         // Withdraw stamina potion from the bank
         case 'withdraw_stamina': {
             if (state.useStaminas && !bot.inventory.containsId(itemIds.stamina_potion_4) && bot.bank.getQuantityOfId(itemIds.stamina_potion_4)) {
+                logger(state, 'debug', `stateManager: ${state.main_state}`, 'Withdrawing Stamina potion (4).');
                 bot.bank.withdrawAllWithId(itemIds.stamina_potion_4);
                 timeoutManager.add({
                     state,
                     conditionFunction: () => bot.inventory.containsId(itemIds.stamina_potion_4),
-                    action:() => {
-                        logger(state, 'debug', `stateManager: ${state.main_state}`, 'Withdrawing Stamina potion (4).');
-                        bot.bank.withdrawAllWithId(itemIds.stamina_potion_4);
-                    },
                     maxWait: 10,
-                    maxAttempts: 3,
-                    retryTimeout: 3,
                     onFail: () => {
                         logger(state, 'all', `stateManager: ${state.main_state}`, 'Failed to withdraw Stamina potion (4) after 3 attempts and 10 ticks.');
                         state.main_state = 'open_bank';
@@ -229,17 +211,12 @@ const stateManager = () => {
 
             // Withdraw Butterfly jars.
             if (!bot.inventory.containsId(itemIds.butterfly_jar)) {
+                logger(state, 'debug', `stateManager: ${state.main_state}`, 'Withdrawing Butterfly jars.');
                 bot.bank.withdrawAllWithId(itemIds.butterfly_jar);
                 timeoutManager.add({
                     state,
                     conditionFunction: () => bot.inventory.containsId(itemIds.butterfly_jar),
-                    action:() => {
-                        logger(state, 'debug', `stateManager: ${state.main_state}`, 'Withdrawing Butterfly jars.');
-                        bot.bank.withdrawAllWithId(itemIds.butterfly_jar);
-                    },
                     maxWait: 10,
-                    maxAttempts: 3,
-                    retryTimeout: 3,
                     onFail: () => {
                         logger(state, 'all', `stateManager: ${state.main_state}`, 'Failed to withdraw Butterfly jars after 3 attempts and 10 ticks.');
                         state.main_state = 'open_bank';

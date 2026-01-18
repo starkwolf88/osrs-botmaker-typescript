@@ -1,10 +1,3 @@
-export type WidgetEntry = {
-    packed_widget_id: number,
-    identifier: number,
-    opcode: number,
-    p0: number
-};
-
 export const widgetData = {
     dialogue: {
         mahogany_homes: {
@@ -18,4 +11,4 @@ export const widgetData = {
             }
         }
     }
-} as const;
+};

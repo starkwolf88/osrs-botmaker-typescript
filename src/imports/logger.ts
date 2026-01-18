@@ -1,7 +1,8 @@
+// Type imports
+import {State} from './types.js';
+
 export const logger = (
-    state: {
-        debugEnabled: boolean, // Is debug enabled.
-    },
+    state: State,
     type: 'all' | 'debug', // Log type
     source: string, // Source of the message,
     message: string, // Message to show in the log.

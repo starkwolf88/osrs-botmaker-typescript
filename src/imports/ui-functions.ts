@@ -4,6 +4,9 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 
+// Type imports
+import {State} from './types.js';
+
 // Types
 export type ColorScheme = {
     BACKGROUND: java.awt.Color;
@@ -82,9 +85,7 @@ export function createBasicWindow(
 
 // Start script button
 export const addStartButton = (
-    state: {
-        uiCompleted: boolean
-    },
+    state: State,
     frame: javax.swing.JFrame,
     panel: javax.swing.JPanel,
 	colorScheme: ColorScheme

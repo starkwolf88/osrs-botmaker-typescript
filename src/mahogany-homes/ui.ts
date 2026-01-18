@@ -6,6 +6,9 @@ import {
     createDropdown
 } from '../imports/ui-functions.js';
 
+// Type imports
+import {State} from '../imports/types.js';
+
 // Colour scheme
 const colorScheme = {
     BACKGROUND: new java.awt.Color(0x000A30),
@@ -16,10 +19,7 @@ const colorScheme = {
 
 // Create the UI.
 export const createUi = (
-    state: {
-        scriptName: string,
-        uiCompleted: boolean
-    }
+    state: State
 ): any => {
 
     // Create main window.

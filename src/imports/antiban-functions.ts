@@ -1,5 +1,9 @@
+// Function imports
 import {logger} from './logger.js';
 import {utilityFunctions} from './utility-functions.js';
+
+// Type imports
+import {State} from './types.js';
 
 export const antibanFunctions = {
     getRandomisedAfkTimeout: (
@@ -17,14 +21,7 @@ export const antibanFunctions = {
     },
 
     afkTrigger: (
-        state: {
-            antibanEnabled: boolean,
-            antibanTriggered: boolean,
-            debugEnabled: boolean,
-            debugFullState: boolean,
-            gameTick: number,
-            timeout: number
-        }
+        state: State
     ): boolean => {
         if (!state.antibanTriggered) {
             const antibanTimeout = antibanFunctions.getRandomisedAfkTimeout(5, 15, 1, 5) || antibanFunctions.getRandomisedAfkTimeout(1, 5, 1, 5);

@@ -1,3 +1,10 @@
+// Function imports
+import {logger} from './logger.js';
+
+// Type imports
+import {State} from './types.js';
+
+// inventoryFunctions
 export const inventoryFunctions = {
 
     // Returns the first item ID from the inventory that exists within `itemIds`.
@@ -24,11 +31,13 @@ export const inventoryFunctions = {
 
     // Returns a boolean depending on whether all quantities matched or not.
     checkQuantitiesMatch: (
+        state: State,
         items: {
             itemId: number; // Item ID to check against
             quantity: number // Item quantity to check against
         }[]
     ): boolean => {
+        logger(state, 'debug', `checkQuantitiesMatch`, 'Checking inventory item quantities.');
         for (const item of items) {
             if (bot.inventory.getQuantityOfId(item.itemId) !== item.quantity) return false;
         }

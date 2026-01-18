@@ -1,20 +1,16 @@
+// Function imports
 import {logger} from './logger.js';
+
+// Type imports
+import {State} from './types.js';
 
 export const timeoutManager = {
     conditions: [] as Array<{
         conditionFunction: () => boolean;
         maxWait: number;
         ticksWaited: number;
+        ticksDelayed: number;
         onFail?: () => void;
-
-        // Optional retry logic
-        action?: () => void;
-        maxAttempts?: number;
-        retryTimeout?: number;
-
-        // internal bookkeeping
-        _attempts?: number;
-        _retryCooldown?: number;
     }>,
     globalFallback: undefined as (() => void) | undefined,
     globalFallbackThreshold: 60,
@@ -25,76 +21,51 @@ export const timeoutManager = {
         conditionFunction,
         maxWait,
         onFail,
-        action,
-        maxAttempts,
-        retryTimeout
+        initialTimeout = 0
     }: {
-        state: {debugEnabled: boolean};
+        state: State,
         conditionFunction: () => boolean;
         maxWait: number;
         onFail?: (() => void) | string;
-        action?: () => void;
-        maxAttempts?: number;
-        retryTimeout?: number;
+        initialTimeout?: number;
     }): void {
         const failCallback = typeof onFail === 'string' ? () => logger(state, 'all', 'Timeout', onFail) : onFail;
         this.conditions.push({
             conditionFunction,
             maxWait,
             ticksWaited: 0,
-            onFail: failCallback,
-            action,
-            maxAttempts,
-            retryTimeout,
-            _attempts: 0,
-            _retryCooldown: 0
+            ticksDelayed: initialTimeout,
+            onFail: failCallback
         });
     },
 
-    tick(): void {
+    tick(
+        state: State
+    ): void {
         this.conditions = this.conditions.filter(condition => {
-
-            // Condition satisfied? remove immediately
-            if (condition.conditionFunction()) return false;
-
-            // Retry logic
-            if (condition.action && (condition.maxAttempts === undefined || condition._attempts! < condition.maxAttempts)) {
-
-                // loop retries in same tick if cooldown allows
-                while (condition._retryCooldown! <= 0 && (condition.maxAttempts === undefined || condition._attempts! < condition.maxAttempts)) {
-                    condition.action();
-                    condition._attempts!++;
-
-                    // If the action satisfied the condition, remove
-                    if (condition.conditionFunction()) return false;
-
-                    // reset cooldown for next retry (optional: can be 0 for instant)
-                    condition._retryCooldown = condition.retryTimeout ?? 1;
-
-                    // If retryTimeout is 0, loop again immediately; else wait
-                    if (condition._retryCooldown > 0) break;
-                }
-
-                // decrement cooldown if not zero
-                if (condition._retryCooldown! > 0) condition._retryCooldown!--;
-
-                // Check condition again after cooldown decrement
-                if (condition.conditionFunction()) return false;
+    
+            // Reset stuck count
+            if (this.conditions.length === 0) {
+                state.stuck_count = 0;
             }
 
-            // Increment ticks every tick
+            if (condition.ticksDelayed > 0) {
+                condition.ticksDelayed--;
+                return true; // still delaying
+            }
+
+            if (condition.conditionFunction()) return false;
+
             condition.ticksWaited++;
 
-            // Max wait check
-            if (condition.maxWait !== undefined && condition.ticksWaited >= condition.maxWait) {
-                if (condition.onFail) condition.onFail();
+            if (condition.ticksWaited >= condition.maxWait) {
+                condition.onFail?.();
                 return false;
             }
 
             return true;
         });
 
-        // Global fallback
         if (this.conditions.length > 0) {
             this.globalTicksWaited++;
             if (this.globalTicksWaited >= this.globalFallbackThreshold && this.globalFallback) {
@@ -106,8 +77,5 @@ export const timeoutManager = {
         }
     },
 
-    // Returns true if there are any unresolved conditions
-    isWaiting(): boolean {
-        return this.conditions.length > 0;
-    }
+    isWaiting(): boolean {return this.conditions.length > 0;}
 };

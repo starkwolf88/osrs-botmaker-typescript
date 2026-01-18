@@ -1,21 +1,3 @@
-export type ItemCombinationData = {
-    combined_item_name: string,
-    combined_item_id: number,
-    deposit_all: boolean,
-    items: {
-        id: number,
-        name: string,
-        quantity: number
-    }[],
-    make_widget_data?: {
-        packed_widget_id: number,
-        identifier: number;
-        opcode: number;
-        p0: number
-    },
-    timeout: number
-};
-
 // Timeouts
 const timeouts = {
     unstrungBows: 82

@@ -1,5 +1,3 @@
-export type ItemId = keyof typeof itemIds;
-
 export const itemIds = {
     butterfly_jar: 10012,
     pastry_dough: 1953,
@@ -9,4 +7,4 @@ export const itemIds = {
     snowy_knight: 10016,
     stamina_potion_4: 12625,
     jug_of_water: 1937
-} as const;
+};
