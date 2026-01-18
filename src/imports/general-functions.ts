@@ -20,7 +20,7 @@ export const generalFunctions = {
             if (state.debugEnabled && state.debugFullState) debugFunctions.stateDebugger(state);
 
             // Script stuck check.
-            if (state.stuck_count > 3) throw new Error(`Fatal error with script. Failure location: ${state.failure_location}`);
+            if (state.stuck_count > 3) throw new Error(`Fatal error with script. Failure origin: ${state.failure_origin}`);
 
             // Timeout logic.
             if (state.timeout > 0) {
@@ -29,6 +29,7 @@ export const generalFunctions = {
             }
             timeoutManager.tick(state);
             if (timeoutManager.isWaiting()) return false;
+            state.stuck_count = 0;
 
             // Antiban AFK and break logic.
             if (state.antibanEnabled && antibanFunctions.afkTrigger(state)) return false;
@@ -48,7 +49,7 @@ export const generalFunctions = {
         failResetState?: string
     ) => {
         logger(state, 'debug', 'handleFailure', failureMessage);
-        state.failure_location = failureLocation
+        state.failure_origin = `${failureLocation} - ${failureMessage}`
         state.stuck_count++
         if (failResetState) state.main_state = failResetState
     },
