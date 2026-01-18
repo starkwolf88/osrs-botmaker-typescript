@@ -51,12 +51,14 @@ export const bankFunctions = {
     withdrawMissingItems: (
         state: {
             main_state: string,
-            debugEnabled: boolean
+            debugEnabled: boolean,
+            timeout: number
         },
         items: {
             id: number;
             quantity: number
-        }[]
+        }[],
+        failState: string
     ): boolean => {
         for (const item of items) {
             if (!bot.inventory.containsId(item.id)) {
@@ -70,7 +72,10 @@ export const bankFunctions = {
                     maxWait: 10,
                     maxAttempts: 3,
                     retryTimeout: 3,
-                    onFail: () => `Failed to withdraw item ID ${item.id} after 3 attempts and 10 ticks.`
+                    onFail: () => {
+                        logger(state, 'debug', 'bankFunctions.withdrawMissingItems', `Failed to withdraw item ID ${item.id} after 3 attempts and 10 ticks.`);
+                        state.main_state = failState;
+                    }
                 });
                 return true;
             }
