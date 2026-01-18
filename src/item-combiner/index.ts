@@ -24,7 +24,7 @@ const state = {
     antibanTriggered: false,
     debugEnabled: false,
     debugFullState: false,
-    failure_location: '',
+    failure_origin: '',
     gameTick: 0,
     main_state: 'open_bank',
     scriptName: '[Stark] Item Combiner',
