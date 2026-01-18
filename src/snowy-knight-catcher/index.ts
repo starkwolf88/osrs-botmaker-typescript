@@ -20,7 +20,7 @@ const state = {
     antibanTriggered: false,
     debugEnabled: false,
     debugFullState: false,
-    failure_location: '',
+    failure_origin: '',
     gameTick: 0,
     main_state: 'walk_to_snowy_whites',
     scriptName: '[Stark] Snowy Knight Catcher',
