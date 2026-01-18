@@ -91,14 +91,14 @@ export const bankFunctions = {
         state: State,
         items: {
             id: number;
-            quantity: number
+            quantity: number | 'all';
         }[],
         failResetState?: string
     ): boolean => {
         for (const item of items) {
             if (!bot.inventory.containsId(item.id)) {
                 logger(state, 'debug', 'bankFunctions.withdrawMissingItems', `Withdrawing item ID ${item.id} with quantity ${item.quantity}`);
-                bot.bank.withdrawQuantityWithId(item.id, item.quantity);
+                item.quantity == 'all' ? bot.bank.withdrawAllWithId(item.id) : bot.bank.withdrawQuantityWithId(item.id, item.quantity);
                 timeoutManager.add({
                     state,
                     conditionFunction: () => bot.inventory.containsId(item.id),
