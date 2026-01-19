@@ -168,13 +168,13 @@ const stateManager = () => {
             if (!bankFunctions.requireBankOpen(state, 'open_bank') || !bot.localPlayerIdle()) break;
             logger(state, 'debug', `stateManager: ${state.main_state}`, 'Checking butterfly jar quantity.');
             if (bankFunctions.isQuantityLow(itemIds.butterfly_jar, 1)) throw new Error('Ran out of Butterfly jars.');
-            state.useStaminas ? state.main_state = 'withdraw_stamina' : state.main_state = 'withdraw_jars';
+            state.useStaminas && !bankFunctions.isQuantityLow(itemIds.stamina_potion_4, 1) ? state.main_state = 'withdraw_stamina' : state.main_state = 'withdraw_jars';
             break;
         }
 
         // Withdraw stamina potion from the bank. Reset to `close_bank` on failure.
         case 'withdraw_stamina': {
-            if (!state.useStaminas || bankFunctions.isQuantityLow(itemIds.stamina_potion_4, 0) || !bankFunctions.requireBankOpen(state, 'open_bank') || !bot.localPlayerIdle() || bot.bank.isBanking()) break;
+            if (!bankFunctions.requireBankOpen(state, 'open_bank') || !bot.localPlayerIdle() || bot.bank.isBanking()) break;
             if (bankFunctions.withdrawMissingItems(state, [{id: itemIds.stamina_potion_4, quantity: 1}], 'close_bank')) break; 
             state.main_state = 'withdraw_jars';
             break;
