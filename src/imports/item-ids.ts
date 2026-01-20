@@ -5,6 +5,9 @@ export const itemIds = {
     pie_shell: 2315,
     pot_of_flour: 1933,
     snowy_knight: 10016,
+    stamina_potion_1: 12631,
+    stamina_potion_2: 12629,
+    stamina_potion_3: 12627,
     stamina_potion_4: 12625,
     jug_of_water: 1937
 };
