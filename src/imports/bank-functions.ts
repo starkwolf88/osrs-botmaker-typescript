@@ -112,6 +112,30 @@ export const bankFunctions = {
         return false;
     },
 
+    // Withdraw first that exists.
+    withdrawFirstExisting: (
+        state: State,
+        itemIds: number[],
+        quantity: number,
+        failResetState?: string
+    ): boolean => {
+        for (const itemId of itemIds) {
+            if (bot.bank.getQuantityOfId(itemId) >= quantity) {
+                logger(state, 'debug', 'bankFunctions.withdrawFirstExisting', `Withdrawing item ID ${itemId} with quantity ${quantity}`);
+                bot.bank.withdrawQuantityWithId(itemId, quantity);
+                timeoutManager.add({
+                    state,
+                    conditionFunction: () => bot.inventory.containsId(itemId),
+                    initialTimeout: 1,
+                    maxWait: 10,
+                    onFail: () => generalFunctions.handleFailure(state, 'bankFunctions.withdrawMissingItems', `Failed to withdraw item ID ${itemId} after 10 ticks.`, failResetState)
+                });
+                return true;
+            }
+        }
+        return false;
+    },
+
     // Deposit items if required.
     depositAllItems: (
         state: State,
