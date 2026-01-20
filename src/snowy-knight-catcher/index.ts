@@ -172,10 +172,11 @@ const stateManager = () => {
             break;
         }
 
-        // Withdraw stamina potion from the bank. Reset to `close_bank` on failure.
+        // Withdraw stamina potion from the bank if don't exist in inventory. Reset to `close_bank` on failure.
         case 'withdraw_stamina': {
             if (!bankFunctions.requireBankOpen(state, 'open_bank') || !bot.localPlayerIdle() || bot.bank.isBanking()) break;
-            if (bankFunctions.withdrawMissingItems(state, [{id: itemIds.stamina_potion_4, quantity: 1}], 'close_bank')) break; 
+            const staminaIds = [itemIds.stamina_potion_1, itemIds.stamina_potion_2, itemIds.stamina_potion_3, itemIds.stamina_potion_4];
+            if (!bot.inventory.containsAnyIds(staminaIds) && bankFunctions.withdrawFirstExisting(state, staminaIds, 1)) break;
             state.main_state = 'withdraw_jars';
             break;
         }
