@@ -4,14 +4,13 @@ export type State = {
     antibanEnabled: boolean;
     antibanTriggered: boolean;
     failureOrigin: string,
-    // failureCounts: Record<string, number>,
+    failureCounts: Record<string, number>,
     debugEnabled: boolean;
     debugFullState: boolean;
     gameTick: number;
-    // lastFailureKey: string;
+    lastFailureKey: string;
     mainState: string;
     scriptName: string;
-    stuckCount: number;
     timeout: number;
 
     // Optional
@@ -57,7 +56,7 @@ export type HerbPatch = {
     name: string;
     enabled: boolean;
     worldPoint: net.runelite.api.coords.WorldPoint;
-    composted: boolean;
     inProgress: boolean;
+    composted: boolean;
     completed: boolean;
 }
