@@ -13,10 +13,10 @@ import {locationFunctions} from '../imports/location-functions.js';
 import {logger} from '../imports/logger.js';
 import {npcFunctions} from '../imports/npc-functions.js';
 import {npcIdGroups} from '../imports/npc-ids.js';
+import {tileFunctions} from '../imports/tile-functions.js';
 import {utilityFunctions} from '../imports/utility-functions.js';
 import {widgetData} from '../imports/widget-data.js';
 import {widgetFunctions} from '../imports/widget-functions.js';
-import { tileFunctions } from '../imports/tile-functions.js';
 
 // Type imports
 import {HerbPatch} from '../imports/types.js';
@@ -135,7 +135,13 @@ const stateManager = () => {
         // Starting state of the script. Assign a herb patch. Terminate script if none are found to be harvested.
         case 'assign_herb_patch': {
             const herbPatchNotHarvested = utilityFunctions.getObjectByValues(state.herbPatches, {completed: false, enabled: true});
-            if (!herbPatchNotHarvested) throw new Error('All herb patches harvested.');
+            if (!herbPatchNotHarvested) {
+                if (bot.inventory.containsId(itemIds.spade)) {
+                    exchangeToolLeprechaun('deposit');
+                    break;
+                }
+                throw new Error('All herb patches harvested.');
+            }
             herbPatchNotHarvested.inProgress = true;
             state.mainState = 'walk_to_herb_patch';
             break;
@@ -177,25 +183,7 @@ const stateManager = () => {
         // Withdraw tools from Tool Leprechaun if tools not in inventory.
         case 'withdraw_tools': {
             if (!bot.localPlayerIdle()) break;
-            if (!bot.inventory.containsId(itemIds.spade)) {
-
-                // Get Tool Leprechaun.
-                const toolLeprechaun = npcFunctions.getClosestNpc(npcIdGroups.tool_leprechaun);
-                if (!toolLeprechaun) {
-                    generalFunctions.handleFailure(state, `stateManager (${state.mainState})`, 'Could not locate Tool Leprechaun', 'walk_to_herb_patch');
-                    break;
-                }
-
-                // Interact with Tool Leprechaun and wait for the interface to be visible.
-                if (!widgetFunctions.widgetExists(widgetData.farming.tool_leprechaun.withdraw.spade.packed_widget_id)) {
-                    bot.npcs.interactSupplied(toolLeprechaun, 'Exchange');
-                    if (!widgetFunctions.widgetTimeout(state, widgetData.farming.tool_leprechaun.withdraw.spade)) break;
-                }
-
-                // Withdraw tools.
-                Object.values(widgetData.farming.tool_leprechaun.withdraw).forEach(w => bot.widgets.interactSpecifiedWidget(w.packed_widget_id, w.identifier, w.opcode, w.p0));
-                if (!inventoryFunctions.itemInInventoryTimeout(state, itemIds.spade)) break;
-            }
+            if (!bot.inventory.containsId(itemIds.spade) && !exchangeToolLeprechaun('withdraw')) break;
             state.mainState = 'herb_patch_interaction';
             break;
         }
@@ -219,7 +207,7 @@ const stateManager = () => {
             }
 
             // Herb patch state.
-            const herbPatchState = tileFunctions.getFirstAction(herbPatchInProgress.id);
+            const herbPatchState = tileFunctions.getAction(herbPatchInProgress.id, 0);
 
             // Determine interaction type.
             logger(state, 'debug', `stateManager (${state.mainState})`, `Herb patch state: ${herbPatchState}`)
@@ -238,19 +226,18 @@ const stateManager = () => {
                     break;
                 }
                 case 'Pick': {
-                    bot.printGameMessage('SHOULD PICK?!!?')
                     bot.objects.interactObject('Herbs', 'Pick');
                     break;
                 }
 
                 // Empty patch
                 default: {
-                    
+
                     // Compost
                     if (!herbPatchInProgress.composted) {
                         bot.inventory.itemOnObjectWithIds(itemIds.bottomlessBucketUltraId, herbPatchTileObject);
                         herbPatchInProgress.composted = true;
-                        state.timeout = 8;
+                        state.timeout = 7;
                         break;
                     }
 
@@ -279,4 +266,25 @@ const completeHerbPatch = (herbPatchInProgress: HerbPatch) => {
     herbPatchInProgress.completed = true;
     herbPatchInProgress.inProgress = false;
     state.mainState = 'assign_herb_patch';
+}
+
+const exchangeToolLeprechaun = (withdrawDeposit: 'withdraw' | 'deposit') => {
+
+    // Get Tool Leprechaun.
+    const toolLeprechaun = npcFunctions.getClosestNpc(npcIdGroups.tool_leprechaun);
+    if (!toolLeprechaun) {
+        generalFunctions.handleFailure(state, `stateManager (${state.mainState})`, 'Could not locate Tool Leprechaun', 'walk_to_herb_patch');
+        return false;
+    }
+
+    // Interact with Tool Leprechaun and wait for the interface to be visible.
+    if (!widgetFunctions.widgetExists(widgetData.farming.tool_leprechaun[withdrawDeposit].spade.packed_widget_id)) {
+        bot.npcs.interactSupplied(toolLeprechaun, 'Exchange');
+        if (!widgetFunctions.widgetTimeout(state, widgetData.farming.tool_leprechaun[withdrawDeposit].spade)) return false;
+    }
+
+    // Withdraw/deposit tools.
+    Object.values(widgetData.farming.tool_leprechaun[withdrawDeposit]).forEach(w => bot.widgets.interactSpecifiedWidget(w.packed_widget_id, w.identifier, w.opcode, w.p0));
+    if (withdrawDeposit == 'withdraw' && !inventoryFunctions.itemInInventoryTimeout(state, itemIds.spade)) return false;
+    return true;
 }
