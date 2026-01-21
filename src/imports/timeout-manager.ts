@@ -46,7 +46,7 @@ export const timeoutManager = {
     
             // Reset stuck count
             if (this.conditions.length === 0) {
-                state.stuck_count = 0;
+                state.stuckCount = 0;
             }
 
             if (condition.ticksDelayed > 0) {
