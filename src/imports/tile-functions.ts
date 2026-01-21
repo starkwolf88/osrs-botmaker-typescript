@@ -1,9 +1,10 @@
 export const tileFunctions = {
 
     // Returns first available action on a tile object.
-    getFirstAction: (
-        tileObjectId: number // Tile object ID.
-    ): string => bot.objects.getTileObjectComposition(tileObjectId).getActions()[0],
+    getAction: (
+        tileObjectId: number, // Tile object ID.
+        actionIndexToGet: number
+    ): string => bot.objects.getTileObjectComposition(tileObjectId).getActions()[actionIndexToGet],
 
     // Returns TileObject using the tile object ID.
     getTileObjectById: (
