@@ -15,12 +15,12 @@ export const generalFunctions = {
         state: State
     ): boolean => {
         try {
-            logger(state, 'debug', 'onGameTick', `Function start. Script game tick ${state.gameTick}`);
+            logger(state, 'debug', 'onGameTick', `Script game tick ${state.gameTick} -------------------------`);
             state.gameTick++;
             if (state.debugEnabled && state.debugFullState) debugFunctions.stateDebugger(state);
 
             // Script stuck check.
-            if (state.stuck_count > 3) throw new Error(`Fatal error with script. Failure origin: ${state.failure_origin}`);
+            if (state.stuckCount > 3) throw new Error(`Fatal error with script. Failure origin: ${state.failureOrigin}`);
 
             // Timeout logic.
             if (state.timeout > 0) {
@@ -29,7 +29,7 @@ export const generalFunctions = {
             }
             timeoutManager.tick(state);
             if (timeoutManager.isWaiting()) return false;
-            state.stuck_count = 0;
+            state.stuckCount = 0;
 
             // Antiban AFK and break logic.
             if (state.antibanEnabled && antibanFunctions.afkTrigger(state)) return false;
@@ -49,9 +49,9 @@ export const generalFunctions = {
         failResetState?: string
     ) => {
         logger(state, 'debug', 'handleFailure', failureMessage);
-        state.failure_origin = `${failureLocation} - ${failureMessage}`
-        state.stuck_count++
-        if (failResetState) state.main_state = failResetState
+        state.failureOrigin = `${failureLocation} - ${failureMessage}`;
+        state.stuckCount++;
+        if (failResetState) state.mainState = failResetState;
     },
 
     // Code to execute after `onEnd()`.
