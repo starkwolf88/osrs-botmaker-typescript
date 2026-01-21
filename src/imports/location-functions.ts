@@ -32,7 +32,7 @@ export const locationFunctions = {
     ): boolean => {
         const isPlayerAtLocation = () => locationFunctions.isPlayerNearWorldPoint(worldPoint)
         if (!isPlayerAtLocation() && !bot.walking.isWebWalking()) {
-            logger(state, 'all', 'webWalkTimeout', `Walking to ${targetDescription}`);
+            logger(state, 'all', 'webWalkTimeout', `Web walking to ${targetDescription}`);
             bot.walking.webWalkStart(worldPoint);
             timeoutManager.add({
                 state,
