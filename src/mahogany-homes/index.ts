@@ -14,7 +14,7 @@
 // // Variables
 // const state = {
 //     scriptName: '[Stark] Mahogany Homes',
-//     main_state: 'walk_to_amy',
+//     mainState: 'walk_to_amy',
 //     sub_state: 'default',
 //     antibanTriggered: false,
 //     gameTick: 0,
@@ -24,7 +24,7 @@
 //     contractType: 'beginner',
 //     antibanEnabled: true,
 //     debugEnabled: false,
-//     debugFullState: false
+//     debugFullState: false,
 // };
 
 // // Functions
@@ -48,8 +48,8 @@
 //         state.contractType = bot.bmCache.getString('contractType', 'Beginner');
 //         if (!generalFunctions.gameTick(state)) return;
 
-//         // Enable break if idle, not walking and the `main_state` is `open_bank`.
-//         // if (bot.localPlayerIdle() && !bot.walking.isWebWalking() && state.main_state == 'open_bank') bot.breakHandler.setBreakHandlerStatus(true);
+//         // Enable break if idle, not walking and the `mainState` is `open_bank`.
+//         // if (bot.localPlayerIdle() && !bot.walking.isWebWalking() && state.mainState == 'open_bank') bot.breakHandler.setBreakHandlerStatus(true);
 
 //         stateManager();
 //     } catch (error) {
@@ -61,14 +61,14 @@
 // export const onEnd = () => generalFunctions.endScript(state);
 
 // const scriptLocations = {
-//     startLocation: utilityFunctions.coordsToWorldPoint(locationCoords.falador.mahogany_homes),
+//     startLocation: locationFunctions.coordsToWorldPoint(locationCoords.falador.mahogany_homes),
 // };
 
 // const stateManager = () => {
-//     logger(state, 'debug', `stateManager: ${state.main_state}.${state.sub_state}`, `Function start.`);
+//     logger(state, 'debug', `stateManager: ${state.mainState}.${state.sub_state}`, `Function start.`);
 
 //     // Determine curren state.
-//     switch(state.main_state) {
+//     switch(state.mainState) {
 
 //         // Starting state of the script. Walk to Amy's house in Falador.
 //         case 'walk_to_amy': {
@@ -77,7 +77,7 @@
 //             // Is player is at start point of Amy's house and Amy is rendered.
 //             const isPlayerAtStartLocation = () => locationFunctions.isPlayerNearWorldPoint(scriptLocations.startLocation) && npcFunctions.npcExists(npcIds.falador.amy);
 //             if (!isPlayerAtStartLocation()) {
-//                 logger(state, 'all', `stateManager: ${state.main_state}.${state.sub_state}`, 'Walking to Amy in Falador.');
+//                 logger(state, 'all', `stateManager: ${state.mainState}.${state.sub_state}`, 'Walking to Amy in Falador.');
 //                 bot.walking.webWalkStart(scriptLocations.startLocation);
 //                 timeoutManager.add({
 //                     state,
@@ -88,8 +88,8 @@
 //                 break;
 //             }
 
-//             logger(state, 'debug', `stateManager: ${state.main_state}.${state.sub_state}`, 'Player is at start location.');
-//             state.main_state = 'get_contract';
+//             logger(state, 'debug', `stateManager: ${state.mainState}.${state.sub_state}`, 'Player is at start location.');
+//             state.mainState = 'get_contract';
 //             break;
 //         }
 
@@ -103,7 +103,7 @@
 //                     // Interact with Amy.
 //                     const isContractSelectVisible = () => widgetFunctions.widgetExists(widgetData.dialogue.mahogany_homes.amy.select_contract.identifier)
 //                     if (!isContractSelectVisible()) {
-//                         logger(state, 'debug', `stateManager: ${state.main_state}.${state.sub_state}`, `Getting a {state.contractType} contract from Amy.`);
+//                         logger(state, 'debug', `stateManager: ${state.mainState}.${state.sub_state}`, `Getting a {state.contractType} contract from Amy.`);
 //                         // const amyNpc = npcFunctions.getFirstNpc(npcIds.falador.amy);
 //                         // if (!amyNpc) throw new Error('NPC Amy cannot be found.');
 //                         // bot.npcs.interactSupplied(amyNpc, 'Contract');
