@@ -13,31 +13,28 @@ export const widgetFunctions = {
         widgetId: number // Widget ID to check whether visible.
     ): boolean => Boolean(client.getWidget(widgetId)),
 
-    // Interact with widget.
-    interactWithWidget: (
+    // Timeout until widget is visible and optionally interact.
+    widgetTimeout: (
         state: State,
         widgetData: {
             packed_widget_id: number,
             identifier: number,
             opcode: number,
             p0: number
-        }
+        },
+        interactWhenFound?: boolean
     ): boolean => {
-
-        // Timeout until the widget is visible.
-        if (!client.getWidget(widgetData.packed_widget_id)) {
+        if (!widgetFunctions.widgetExists(widgetData.packed_widget_id)) {
             timeoutManager.add({
                 state,
-                conditionFunction: () => client.getWidget(widgetData.packed_widget_id) !== null,
+                conditionFunction: () => widgetFunctions.widgetExists(widgetData.packed_widget_id) !== null,
                 initialTimeout: 1,
                 maxWait: 10,
-                onFail: () => generalFunctions.handleFailure(state, 'widgetFunctions.interactWithWidget', `Widget ID ${widgetData.packed_widget_id} not visible after 10 ticks`)
+                onFail: () => generalFunctions.handleFailure(state, 'widgetFunctions.widgetTimeout', `Widget ID ${widgetData.packed_widget_id} not visible after 10 ticks`)
             });
             return false;
         }
-
-        // Interact with widget
-        bot.widgets.interactSpecifiedWidget(widgetData.packed_widget_id, widgetData.identifier, widgetData.opcode, widgetData.p0);
+        interactWhenFound && bot.widgets.interactSpecifiedWidget(widgetData.packed_widget_id, widgetData.identifier, widgetData.opcode, widgetData.p0);
         return true;
     }
 };
