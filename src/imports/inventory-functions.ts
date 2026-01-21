@@ -1,5 +1,7 @@
 // Function imports
+import {generalFunctions} from './general-functions.js';
 import {logger} from './logger.js';
+import {timeoutManager} from './timeout-manager.js';
 
 // Type imports
 import {State} from './types.js';
@@ -41,6 +43,27 @@ export const inventoryFunctions = {
         for (const item of items) {
             if (bot.inventory.getQuantityOfId(item.itemId) !== item.quantity) return false;
         }
+        return true;
+    },
+
+    // Timeout until item is inventory.
+    itemInInventoryTimeout: (
+        state: State,
+        itemId: number,
+        failResetState?: string
+    ): boolean => {
+        if (!bot.inventory.containsId(itemId)) {
+            logger(state, 'debug', 'inventoryFunctions.itemInInventoryTimeout', `Item ID ${itemId} not in the inventory.`);
+            timeoutManager.add({
+                state,
+                conditionFunction: () => bot.inventory.containsId(itemId),
+                initialTimeout: 1,
+                maxWait: 10,
+                onFail: () => generalFunctions.handleFailure(state, 'inventoryFunctions.itemInInventoryTimeout', `Item ID ${itemId} not in inventory after 10 ticks.`, failResetState)
+            });
+            return false;
+        }
+        logger(state, 'debug', 'inventoryFunctions.itemInInventoryTimeout', `Item ID ${itemId} is in the inventory.`);
         return true;
     }
 };
