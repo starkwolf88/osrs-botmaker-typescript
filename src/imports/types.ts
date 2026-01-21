@@ -3,13 +3,15 @@ export type State = {
     // Core
     antibanEnabled: boolean;
     antibanTriggered: boolean;
-    failure_origin: string,
+    failureOrigin: string,
+    // failureCounts: Record<string, number>,
     debugEnabled: boolean;
     debugFullState: boolean;
     gameTick: number;
-    main_state: string;
+    // lastFailureKey: string;
+    mainState: string;
     scriptName: string;
-    stuck_count: number;
+    stuckCount: number;
     timeout: number;
 
     // Optional
@@ -21,6 +23,9 @@ export type State = {
     // Item combiner
     itemCombinationData?: ItemCombinationData;
     startDepositAllCompleted?: boolean;
+
+    // Herb run
+    herbPatches?: HerbPatch[]
 }
 
 export type ItemCombinationData = {
@@ -46,3 +51,13 @@ export type LocationCoords = {
         [subLocation: string]: [number, number, number];
     }
 };
+
+export type HerbPatch = {
+    id: number;
+    name: string;
+    enabled: boolean;
+    worldPoint: net.runelite.api.coords.WorldPoint;
+    composted: boolean;
+    inProgress: boolean;
+    completed: boolean;
+}
