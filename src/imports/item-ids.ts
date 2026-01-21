@@ -44,6 +44,7 @@ export const itemIdGroups = {
         215, // Grimy Cadantine
         217, // Grimy Dwarf Weed
         219, // Grimy Torstol
+        2485, // Grimy Lantadyme
         3049, // Grimy Toadflax
         3051, // Grimy Snapdragon
         30094, // Grimy Huasca
@@ -60,6 +61,7 @@ export const itemIdGroups = {
         265, // Cadantine
         267, // Dwarf Weed
         269, // Torstol
+        2481, // Lantadyme
         2998, // Toadflax
         3000, // Snapdragon
         30097 // Huasca
