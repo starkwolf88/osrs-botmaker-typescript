@@ -4,6 +4,7 @@ import {logger} from './logger.js';
 // Type imports
 import {State} from './types.js';
 
+// timeoutManager
 export const timeoutManager = {
     conditions: [] as Array<{
         conditionFunction: () => boolean;
@@ -39,30 +40,18 @@ export const timeoutManager = {
         });
     },
 
-    tick(
-        state: State
-    ): void {
+    tick(): void {
         this.conditions = this.conditions.filter(condition => {
-    
-            // Reset stuck count
-            if (this.conditions.length === 0) {
-                state.stuckCount = 0;
-            }
-
             if (condition.ticksDelayed > 0) {
                 condition.ticksDelayed--;
                 return true; // still delaying
             }
-
             if (condition.conditionFunction()) return false;
-
             condition.ticksWaited++;
-
             if (condition.ticksWaited >= condition.maxWait) {
                 condition.onFail?.();
                 return false;
             }
-
             return true;
         });
 
@@ -77,5 +66,5 @@ export const timeoutManager = {
         }
     },
 
-    isWaiting(): boolean {return this.conditions.length > 0;}
+    isWaiting(): boolean { return this.conditions.length > 0; }
 };
