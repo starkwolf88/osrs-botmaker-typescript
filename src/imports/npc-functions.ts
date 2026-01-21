@@ -2,25 +2,17 @@ export const npcFunctions = {
 
     // Gets the closest NPC with the specified ID.
     getClosestNpc: (
-        npcId: number // NPC ID to get.
+        npcIds: number[]
     ): net.runelite.api.NPC | undefined => {
-        const npcs = bot.npcs.getWithIds([npcId]);
-        if (npcs){
-            let closestNpc = null;
-            let minDistance = Number.MAX_VALUE;
-
-            npcs.forEach(npc => {
-                const distance = client.getLocalPlayer().getWorldLocation().distanceTo(npc.getWorldLocation());
-                if (distance < minDistance) {
-                    minDistance = distance;
-                    closestNpc = npc;
-                }
-            });
-    
-            if (closestNpc) return closestNpc;
-            return undefined;
-        }
-        return undefined;
+        const npcs = bot.npcs.getWithIds(npcIds);
+        if (!npcs?.length) return undefined;
+        let closest: net.runelite.api.NPC | null = null;
+        let min = Number.POSITIVE_INFINITY;
+        npcs.forEach(npc => {
+            const d = client.getLocalPlayer().getWorldLocation().distanceTo(npc.getWorldLocation());
+            if (d < min) min = d, closest = npc;
+        });
+        return closest || undefined;
     },
 
     // Returns the first NPC with the specified NPC ID.
