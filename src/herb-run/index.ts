@@ -1,448 +1,310 @@
-/** VARIABLES **/
-// General
+// Barbarian farming completed (seed dibbler not supported)
+// Start with herb seeds and ultracompost in inventory
+// Withdraws bottomless bucket from Tool Leprechaun if ultracompost not in inventory
+
+// Data imports
+import {locationCoords} from '../imports/location-coords.js';
+import {objectIds} from '../imports/object-ids.js';
+
+// Function imports
+import {generalFunctions} from '../imports/general-functions.js';
+import {inventoryFunctions} from '../imports/inventory-functions.js';
+import {itemIds} from '../imports/item-ids.js';
+import {locationFunctions} from '../imports/location-functions.js';
+import {logger} from '../imports/logger.js';
+import {npcFunctions} from '../imports/npc-functions.js';
+import {npcIdGroups} from '../imports/npc-ids.js';
+import {utilityFunctions} from '../imports/utility-functions.js';
+import {widgetData} from '../imports/widget-data.js';
+import {widgetFunctions} from '../imports/widget-functions.js';
+
+// Variables
 const state = {
-    interactionActive: {
-        toolLeprechaun: false
-    }
+
+    // Core
+    antibanEnabled: true,
+    antibanTriggered: false,
+    debugEnabled: false,
+    debugFullState: false,
+    // failureCounts: {},
+    failureOrigin: '',
+    gameTick: 0,
+    // lastFailureKey: '',
+    mainState: 'assign_herb_patch',
+    scriptName: '[Stark] Herb Run',
+    stuckCount: 0,
+    timeout: 0,
+
+    // Script specific
+    herbPatches: [
+        {
+            id: objectIds.ardougne.herb_patch,
+            name: 'Ardougne',
+            enabled: bot.variables.getBooleanVariable('Ardougne'),
+            worldPoint: locationFunctions.coordsToWorldPoint(locationCoords.ardougne.herb_patch),
+            composted: false,
+            inProgress: false,
+            completed: false
+        },
+        {
+            id: objectIds.catherby.herb_patch,
+            name: 'Catherby',
+            enabled: bot.variables.getBooleanVariable('Catherby'),
+            worldPoint: locationFunctions.coordsToWorldPoint(locationCoords.catherby.herb_patch),
+            composted: false,
+            inProgress: false,
+            completed: false,
+        },
+        {
+            id: objectIds.falador.herb_patch,
+            name: 'Falador',
+            enabled: bot.variables.getBooleanVariable('Falador'),
+            worldPoint: locationFunctions.coordsToWorldPoint(locationCoords.falador.herb_patch),
+            composted: false,
+            inProgress: false,
+            completed: false
+        },
+        {
+            id: objectIds.farming_guild.herb_patch,
+            name: 'Farming Guild',
+            enabled: bot.variables.getBooleanVariable('Farming Guild'),
+            worldPoint: locationFunctions.coordsToWorldPoint(locationCoords.farming_guild.herb_patch),
+            composted: false,
+            inProgress: false,
+            completed: false
+        },
+        {
+            id: objectIds.hosidious.herb_patch,
+            name: 'Hosidious',
+            enabled: bot.variables.getBooleanVariable('Hosidious'),
+            worldPoint: locationFunctions.coordsToWorldPoint(locationCoords.hosidious.herb_patch),
+            composted: false,
+            inProgress: false,
+            completed: false
+        },
+        {
+            id: objectIds.morytania.herb_patch,
+            name: 'Morytania',
+            enabled: bot.variables.getBooleanVariable('Morytania'),
+            worldPoint: locationFunctions.coordsToWorldPoint(locationCoords.morytania.herb_patch),
+            composted: false,
+            inProgress: false,
+            completed: false
+        },
+        {
+            id: objectIds.varlamore.herb_patch,
+            name: 'Varlamore',
+            enabled: bot.variables.getBooleanVariable('Varlamore'),
+            worldPoint: locationFunctions.coordsToWorldPoint(locationCoords.varlamore.herb_patch),
+            composted: false,
+            inProgress: false,
+            completed: false
+        }
+    ]
 };
-let timeout = 0;
 
-// NPC ID's
-const toolLeprechaunIds = new Set<number>([0, 757, 7757, 12109, 12765]);
-
-// Single Widget ID's
-const singleWidgetIds = {
-    toolLeprechaun: 8192001
-};
-
-// Full widget ID's
-const fullWidgetIds = {
-    toolLeprechaunWithdraw: {
-        spade: [8192010, 1, 57, -1] as const,
-        secateurs: [8192011, 1, 57, -1] as const,
-        bottomlessBucket: [8192015, 1, 57, -1] as const
-    },
-    toolLeprechaunDeposit: {
-        spade: [8257539, 2, 57, -1] as const,
-        secateurs: [8257540, 2, 57, -1] as const,
-        bottomlessBucket: [8257544, 1, 57, -1] as const
-    }
-};
-
-// Item ID's
-const bottomlessBucketUltraId = 22997;
-const spade = 952;
-const herbSeedIds = [
-    5291, // Guam Seed
-    5292, // Marrentill Seed
-    5293, // Tarromin Seed
-    5294, // Harralander Seed
-    5295, // Ranarr Seed
-    5296, // Toadflax Seed
-    5297, // Irit Seed
-    5298, // Avantoe Seed
-    5299, // Kwuarm Seed
-    5300, // Snapdragon Seed
-    5301, // Cadantine Seed
-    5302, // Lantadyme Seed
-    5303, // Dwarf Weed Seed
-    5304, // Torstol Seed
-    30088 // Huasca Seed
-];
-const herbIds = [
-    199, // Grimy Guam Leaf
-    201, // Grimy Marrentill
-    203, // Grimy Tarromin
-    205, // Grimy Harralander
-    207, // Grimy Ranarr Weed
-	3049, // Grimy Toadflax
-	3051, // Grimy Snapdragon
-    209, // Grimy Irit Leaf
-    211, // Grimy Avantoe
-    213, // Grimy Kwuarm
-    215, // Grimy Cadantine
-    217, // Grimy Dwarf Weed
-    219, // Grimy Torstol
-    30094, // Grimy Huasca
-    249, // Guam Leaf
-    251, // Marrentill
-    253, // Tarromin
-    255, // Harralander
-    257, // Ranarr Weed
-	2998, // Toadflax
-	3000, // Snapdragon
-    259, // Irit Leaf
-    261, // Avantoe
-    263, // Kwuarm
-    265, // Cadantine
-    267, // Dwarf Weed
-    269, // Torstol
-    30097 // Huasca
-];
-
-// Herb patches
-const herbPatches = [
-    {
-        id: 8150,
-        name: 'Falador',
-        active: bot.variables.getBooleanVariable('Falador'),
-        worldPoint: new net.runelite.api.coords.WorldPoint(3056, 3310, 0),
-        composted: false,
-        in_progress: false,
-        completed: false
-    },
-    {
-        id: 8151,
-        name: 'Catherby',
-        active: bot.variables.getBooleanVariable('Catherby'),
-        worldPoint: new net.runelite.api.coords.WorldPoint(2813, 3465, 0),
-        composted: false,
-        in_progress: false,
-        completed: false,
-    },
-    {
-        id: 8152,
-        name: 'Ardougne',
-        active: bot.variables.getBooleanVariable('Ardougne'),
-        worldPoint: new net.runelite.api.coords.WorldPoint(2672, 3375, 0),
-        composted: false,
-        in_progress: false,
-        completed: false
-    },
-    {
-        id: 8153,
-        name: 'Morytania',
-        active: bot.variables.getBooleanVariable('Morytania'),
-        worldPoint: new net.runelite.api.coords.WorldPoint(3607, 3532, 0),
-        composted: false,
-        in_progress: false,
-        completed: false
-    },
-    {
-        id: 27115,
-        name: 'Hosidious',
-        active: bot.variables.getBooleanVariable('Hosidious'),
-        worldPoint: new net.runelite.api.coords.WorldPoint(1740, 3550, 0),
-        composted: false,
-        in_progress: false,
-        completed: false
-    },
-    {
-        id: 33979,
-        name: 'Farming Guild',
-        active: bot.variables.getBooleanVariable('Farming Guild'),
-        worldPoint: new net.runelite.api.coords.WorldPoint(1240, 3730, 0),
-        composted: false,
-        in_progress: false,
-        completed: false
-    },
-    {
-        id: 50697,
-        name: 'Varlamore',
-        active: bot.variables.getBooleanVariable('Varlamore'),
-        worldPoint: new net.runelite.api.coords.WorldPoint(1583, 3092, 0),
-        composted: false,
-        in_progress: false,
-        completed: false
-    }
-];
-
-
-/** MAIN FUNCTIONS */
-// onStart()
-export const onStart = () => bot.printGameMessage('Starting herb run.');
-
-// onGameTick()
+// Functions
+export const onStart = () => logger(state, 'all', 'Script', `Starting ${state.scriptName}.`);
 export const onGameTick = () => {
 
-    // Decrement timeout and return if timeout is greater than 0 or the player is not idle.
-    if (timeout > 0 || !bot.localPlayerIdle()) {
-        timeout--;
-        return;
+    // Breaks disabled
+    bot.breakHandler.setBreakHandlerStatus(false);
+
+    try {
+        if (!generalFunctions.gameTick(state)) return;
+
+        // Enable break if not banking, idle, not walking and the `mainState` is `start_state`.
+        if (!bot.bank.isBanking() && bot.localPlayerIdle() && !bot.walking.isWebWalking() && state.mainState == 'start_state') bot.breakHandler.setBreakHandlerStatus(true);
+
+        stateManager();
+    } catch (error) {
+        logger(state, 'all', 'Script', (error as Error).toString());
+        bot.terminate();
     }
-
-    // If any herb patch has `in_progress` set to `true`, continue harvesting logic, else handle next herb patch.
-    getHerbPatchInProgress() ? harvestingLogic() : handleNextHerbPatch();
 };
+export const onEnd = () => generalFunctions.endScript(state);
 
-// onEnd()
-export const onEnd = () => {
-    bot.printGameMessage(`Stopping herb run. Manually stopped.`);
-    bot.walking.webWalkCancel(); // Cancel any web walking.
-    bot.events.unregisterAll(); // Unregister all events.
-};
+const stateManager = () => {
+    logger(state, 'debug', `stateManager`, `${state.mainState}`);
 
-// terminateBot()
-const terminateBot = (terminateMessage: string = '') => {
-    bot.printGameMessage(`Stopping herb run. ${terminateMessage}`);
-    bot.terminate();
-};
+    // Determine main state.
+    switch(state.mainState) {
+
+        // Starting state of the script. Assign a herb patch. Terminate script if none are found to be harvested.
+        case 'assign_herb_patch': {
+            const herbPatchNotHarvested = utilityFunctions.getObjectByValues(state.herbPatches, {completed: false, enabled: true});
+            if (!herbPatchNotHarvested) throw new Error('All herb patches harvested.');
+            herbPatchNotHarvested.inProgress = true;
+            state.mainState = 'walk_to_herb_patch';
+            break;
+        }
+
+        // Walk to the herb patch.
+        case 'walk_to_herb_patch': {
+            const currentHerbPatch = utilityFunctions.getObjectByValues(state.herbPatches, {inProgress: true});
+            if (!currentHerbPatch) {
+                generalFunctions.handleFailure(state, `stateManager (${state.mainState})`, 'Could not determine which herb patch is in progress', 'assign_herb_patch');
+                break;
+            }
+            locationFunctions.webWalkTimeout(state, currentHerbPatch.worldPoint, `${currentHerbPatch.name}`, 200);
+            state.mainState = 'withdraw_tools';
+            break;
+        }
+
+        // Withdraw tools from Tool Leprechaun if tools not in inventory.
+        case 'withdraw_tools': {
+            if (!bot.localPlayerIdle()) break;
+            if (!bot.inventory.containsId(itemIds.spade)) {
+
+                // Get Tool Leprechaun.
+                const toolLeprechaun = npcFunctions.getClosestNpc(npcIdGroups.tool_leprechaun);
+                if (!toolLeprechaun) {
+                    generalFunctions.handleFailure(state, `stateManager (${state.mainState})`, 'Could not locate Tool Leprechaun', 'walk_to_herb_patch');
+                    break;
+                }
+
+                // Interact with Tool Leprechaun and wait for the interface to be visible.
+                if (!widgetFunctions.widgetExists(widgetData.farming.tool_leprechaun.withdraw.spade.packed_widget_id)) {
+                    bot.npcs.interactSupplied(toolLeprechaun, 'Exchange');
+                    if (!widgetFunctions.widgetTimeout(state, widgetData.farming.tool_leprechaun.withdraw.spade)) break;
+                }
+
+                // Withdraw tools.
+                Object.values(widgetData.farming.tool_leprechaun.withdraw).forEach(w => bot.widgets.interactSpecifiedWidget(w.packed_widget_id, w.identifier, w.opcode, w.p0));
+                if (!inventoryFunctions.itemInInventoryTimeout(state, itemIds.spade)) break;
+            }
+
+            state.mainState = 'harvest_herb_patch';
+            break;
+        }
+
+        case 'harvest_herb_patch': {
+            const currentHerbPatch = utilityFunctions.getObjectByValues(state.herbPatches, {inProgress: true});
+            if (!currentHerbPatch) {
+                generalFunctions.handleFailure(state, `stateManager (${state.mainState})`, 'Could not determine which herb patch is in progress.', 'assign_herb_patch');
+                break;
+            }
+
+            // Check the herb patch is rendered.
+            if (!bot.objects.isNearIds([currentHerbPatch.id], 15)) {
+                generalFunctions.handleFailure(state, `stateManager (${state.mainState})`, 'Herb patch not rendered. Attempting to walk to herb patch.', 'walk_to_herb_patch');
+                break;
+            }
 
 
-/** HERB PATCH FUNCTIONS **/
-// getHerbPatchInProgress(): Determine if any of the herb patches are in progress.
-const getHerbPatchInProgress = () => herbPatches.find(herbPatch => herbPatch.in_progress) ?? null;
+            break;
+        }
 
-// getHerbPatchState(): Returns the herb patch state of the provided `herbPatch`.
-const getHerbPatchState = (herbPatch: typeof herbPatches[number]) => {
-    bot.printLogMessage('Execute getHerbPatchState()'); // Logging
-
-    // Complete herb patch if no longer nearby for any reason.
-    if (!bot.objects.isNearIds([herbPatch.id], 15)) {
-        completeHerbPatch(herbPatch);
-        return null;
+        // Default to start state.
+        default: {
+            state.mainState = 'start_state';
+            break;
+        }
     }
-
-    // Return state.
-    return objectFunctions.tiles.getFirstAction(herbPatch.id);
 };
 
-// getRandomHerbPatch(): Returns a random herb patch that is active and hasn't been harvested, or undefined if none exist.
-const getRandomHerbPatch = () => {
-    bot.printLogMessage('Execute getRandomHerbPatch()'); // Logging
+// // getHerbPatchState(): Returns the herb patch state of the provided `herbPatch`.
+// const getHerbPatchState = (herbPatch: typeof herbPatches[number]) => {
+//     bot.printLogMessage('Execute getHerbPatchState()'); // Logging
 
-    // Filter patches that are active AND not completed.
-    const unharvestedActiveHerbPatches = herbPatches.filter(patch => patch.active && !patch.completed);
+//     // Complete herb patch if no longer nearby for any reason.
+//     if (!bot.objects.isNearIds([herbPatch.id], 15)) {
+//         completeHerbPatch(herbPatch);
+//         return null;
+//     }
 
-    // If any patches exist, pick one randomly.
-    if (unharvestedActiveHerbPatches.length > 0) return unharvestedActiveHerbPatches[Math.floor(Math.random() * unharvestedActiveHerbPatches.length)];
-};
+//     // Return state.
+//     return objectFunctions.tiles.getFirstAction(herbPatch.id);
+// };
 
+// // harvestingLogic()
+// const harvestingLogic = () => {
+//     bot.printLogMessage('Execute harvestingLogic()'); // Logging
 
-// handleNextHerbPatch(): 
-const handleNextHerbPatch = () => {
-    bot.printLogMessage('Execute handleNextHerbPatch()'); // Logging
+//     // Get herb patch in progress.
+//     const herbPatchInProgress = getHerbPatchInProgress();
+//     if (!herbPatchInProgress) return;
 
-    // Get a random herb patch where `harvested` is `false`.
-    const randomHerbPatchNotHarvested = getRandomHerbPatch();
+//     // Determine whether the herb patch is nearby.
+//     if (bot.objects.isNearIds([herbPatchInProgress.id], 15)) {
 
-    // Stop the script if all herb patches have been harvested.
-    if (!randomHerbPatchNotHarvested) {
-        if (!handleFarmingEquipment(false)) return; // Deposit farming equipment.
-        return terminateBot('All herb patches harvested.');
-    }
+//         // Withdraw farming equipment if required.
+//         if (!handleFarmingEquipment(true)) return;
+//         return interactWithHerbPatch(herbPatchInProgress); // Interact with the herb patch.
+//     }
+// }
 
-    // Set `in_progress` to `true` against the herb patch.
-    randomHerbPatchNotHarvested.in_progress = true;
+// // interactWithHerbPatch()
+// const interactWithHerbPatch = (herbPatch: typeof herbPatches[number]) => {
+//     bot.printLogMessage('Execute interactWithHerbPatch()'); // Logging
 
-    // Web walk to the herb patch.
-    bot.printGameMessage(`Web walking to ${randomHerbPatchNotHarvested.name} herb patch.`)
-    bot.printLogMessage(`Web walking to ${randomHerbPatchNotHarvested.name} herb patch.`)
-    bot.walking.webWalkStart(randomHerbPatchNotHarvested.worldPoint);
-}
-
-// harvestingLogic()
-const harvestingLogic = () => {
-    bot.printLogMessage('Execute harvestingLogic()'); // Logging
-
-    // Get herb patch in progress.
-    const herbPatchInProgress = getHerbPatchInProgress();
-    if (!herbPatchInProgress) return;
-
-    // Determine whether the herb patch is nearby.
-    if (bot.objects.isNearIds([herbPatchInProgress.id], 15)) {
-
-        // Withdraw farming equipment if required.
-        if (!handleFarmingEquipment(true)) return;
-        return interactWithHerbPatch(herbPatchInProgress); // Interact with the herb patch.
-    }
-}
-
-// interactWithHerbPatch()
-const interactWithHerbPatch = (herbPatch: typeof herbPatches[number]) => {
-    bot.printLogMessage('Execute interactWithHerbPatch()'); // Logging
-
-    // Get the herb patch state.
-    const herbPatchState = getHerbPatchState(herbPatch);
-    bot.printLogMessage(`${herbPatch.name} state: ${herbPatchState}`)
+//     // Get the herb patch state.
+//     const herbPatchState = getHerbPatchState(herbPatch);
+//     bot.printLogMessage(`${herbPatch.name} state: ${herbPatchState}`)
     
-    // Get the herb patch TileObject. Skip herb patch if any issues.
-    const herbPatchTileObject = objectFunctions.tiles.getTileObjectById(herbPatch.id);
-    if (!herbPatchTileObject) return completeHerbPatch(herbPatch);
+//     // Get the herb patch TileObject. Skip herb patch if any issues.
+//     const herbPatchTileObject = objectFunctions.tiles.getTileObjectById(herbPatch.id);
+//     if (!herbPatchTileObject) return completeHerbPatch(herbPatch);
 
-    // If inventory contains any herbs, note at the tool leprechaun.
-    if (bot.inventory.containsAnyIds(herbIds)) {
+//     // If inventory contains any herbs, note at the tool leprechaun.
+//     if (bot.inventory.containsAnyIds(herbIds)) {
 
-        // Get tool leprcehaun.
-        const toolLeprechaun = getNearestToolLeprechaun();
-        if (toolLeprechaun) {
+//         // Get tool leprcehaun.
+//         const toolLeprechaun = getNearestToolLeprechaun();
+//         if (toolLeprechaun) {
 
-            // Get random herb by ID and use on the tool leprcehaun.
-            const herbId = inventoryFunctions.getRandomExistingItemId(herbIds)
-            if (herbId) bot.inventory.itemOnNpcWithIds(herbId, toolLeprechaun)
-        }
+//             // Get random herb by ID and use on the tool leprcehaun.
+//             const herbId = inventoryFunctions.getRandomExistingItemId(herbIds)
+//             if (herbId) bot.inventory.itemOnNpcWithIds(herbId, toolLeprechaun)
+//         }
 
-        // Return to re-check next tick if there are more herbs to note.
-        return;
-    }
+//         // Return to re-check next tick if there are more herbs to note.
+//         return;
+//     }
 
-    // Rake patch
-    if (herbPatchState == 'Rake') bot.objects.interactObject('Herb patch', 'Rake');
+//     // Rake patch
+//     if (herbPatchState == 'Rake') bot.objects.interactObject('Herb patch', 'Rake');
 
-    // Clear dead herbs
-    if (herbPatchState == 'Clear') {
-        bot.objects.interactObject('Dead herbs', 'Clear');
-        return timeout = randomInt(8, 10); // Timeout for herbs to clear
-    }
+//     // Clear dead herbs
+//     if (herbPatchState == 'Clear') {
+//         bot.objects.interactObject('Dead herbs', 'Clear');
+//         return timeout = randomInt(8, 10); // Timeout for herbs to clear
+//     }
 
-    // Cure diseased herbs
-    // if (herbPatchState == 'Cure') // TO DO
+//     // Cure diseased herbs
+//     // if (herbPatchState == 'Cure') // TO DO
 
-    // Pick herbs
-    if (herbPatchState == 'Pick') bot.objects.interactObject('Herbs', 'Pick');
+//     // Pick herbs
+//     if (herbPatchState == 'Pick') bot.objects.interactObject('Herbs', 'Pick');
 
-    // Apply ultra compost
-    if (!herbPatchState && !herbPatch.composted) {
-        bot.inventory.itemOnObjectWithIds(bottomlessBucketUltraId, herbPatchTileObject);
-        herbPatch.composted = true;
-        return timeout = randomInt(8, 10); // Timeout for compost to apply
-    }
+//     // Apply ultra compost
+//     if (!herbPatchState && !herbPatch.composted) {
+//         bot.inventory.itemOnObjectWithIds(bottomlessBucketUltraId, herbPatchTileObject);
+//         herbPatch.composted = true;
+//         return timeout = randomInt(8, 10); // Timeout for compost to apply
+//     }
 
-    // Plant seed
-    if (!herbPatchState && herbPatch.composted) {
+//     // Plant seed
+//     if (!herbPatchState && herbPatch.composted) {
 
-        // Get first herb seed ID in inventory.
-        const herbSeedId = inventoryFunctions.getFirstExistingItemId(herbSeedIds);
-        if (!herbSeedId) return terminateBot('Ran out of herb seeds.');
+//         // Get first herb seed ID in inventory.
+//         const herbSeedId = inventoryFunctions.getFirstExistingItemId(herbSeedIds);
+//         if (!herbSeedId) return terminateBot('Ran out of herb seeds.');
 
-        // Plant seed.
-        bot.inventory.itemOnObjectWithIds(herbSeedId, herbPatchTileObject);
+//         // Plant seed.
+//         bot.inventory.itemOnObjectWithIds(herbSeedId, herbPatchTileObject);
 
-        // Complete herb patch.
-        completeHerbPatch(herbPatch);
+//         // Complete herb patch.
+//         completeHerbPatch(herbPatch);
 
-        // Timeout for seed to be planted.
-        return timeout = randomInt(5, 8);
-    }
-};
+//         // Timeout for seed to be planted.
+//         return timeout = randomInt(5, 8);
+//     }
+// };
 
-// completeHerbPatch
-const completeHerbPatch = (herbPatch: typeof herbPatches[number]) => {
-    bot.printLogMessage(`Completing ${herbPatch.name}.`);
-    herbPatch.completed = true;
-    herbPatch.in_progress = false;
-};
-
-// getNearestToolLeprechaun
-const getNearestToolLeprechaun = () => {
-    bot.printLogMessage('Execute getNearestToolLeprechaun()'); // Logging
-
-    // Get tool leprechaun NPC object.
-    let toolLeprechaunFound;
-    const toolLeprechauns = bot.npcs.getWithNames(['Tool Leprechaun']);
-    if (toolLeprechauns.length > 0) {
-        for (const toolLeprechaun of toolLeprechauns) {
-            if (toolLeprechaunIds.has(toolLeprechaun.getId())) toolLeprechaunFound = toolLeprechaun;
-        }
-    }
-
-    // Terminate bot if tool leprechaun not found.
-    if (!toolLeprechaunFound) terminateBot('Tool leprechaun could not be found');
-
-    // Return tool leprechaun NPC object.
-    return toolLeprechaunFound;
-}
-
-// handleFarmingEquipment: Determine if a withdraw or deposit is required and interact with the Tool Leprechaun to do so.
-const handleFarmingEquipment = (withdraw: boolean) => {
-    bot.printLogMessage(`Execute handleFarmingEquipment() - withdraw: ${withdraw}`); // Logging
-
-    // Determine if a withdraw or deposit is required.
-    if ((withdraw && !bot.inventory.containsId(spade)) || (!withdraw && bot.inventory.containsId(spade))) {
-
-        // Get tool leprcehaun and interact.
-        if (!state.interactionActive.toolLeprechaun) {
-            const toolLeprechaun = getNearestToolLeprechaun();
-            if (toolLeprechaun) {
-                bot.npcs.interactSupplied(toolLeprechaun, 'Exchange'); // Exchange tool leprechaun.
-                state.interactionActive.toolLeprechaun = true; // Set state
-                timeout = randomInt(1, 3); // Small timeout after interaction
-            }
-        }
-
-        // Check the leprechaun interface is open.
-        if (client.getWidget(singleWidgetIds.toolLeprechaun)) {
-
-            // Withdraw/deposit Spade, Magic secateurs and Bottomless compost bucket
-            if (withdraw) {
-                bot.widgets.interactSpecifiedWidget(...fullWidgetIds.toolLeprechaunWithdraw.spade);
-                bot.widgets.interactSpecifiedWidget(...fullWidgetIds.toolLeprechaunWithdraw.secateurs);
-                bot.widgets.interactSpecifiedWidget(...fullWidgetIds.toolLeprechaunWithdraw.bottomlessBucket);
-            } else {
-                bot.widgets.interactSpecifiedWidget(...fullWidgetIds.toolLeprechaunDeposit.spade);
-                bot.widgets.interactSpecifiedWidget(...fullWidgetIds.toolLeprechaunDeposit.secateurs);
-                bot.widgets.interactSpecifiedWidget(...fullWidgetIds.toolLeprechaunDeposit.bottomlessBucket);
-            }
-
-            state.interactionActive.toolLeprechaun = false; // Reset state
-            timeout = randomInt(1, 3); // Small timeout after withdrawal
-            return true; // Return true once withdraw completed
-        }
-
-        // Return false if interaction active.
-        if (state.interactionActive.toolLeprechaun) return false;
-    }
-
-    // Return true if not required.
-    return true;
-};
-
-
-/** INVENTORY FUNCTIONS **/
-const inventoryFunctions = {
-
-    // Get first existing ID.
-    getFirstExistingItemId: (itemIds: number[]) => {
-        if (!bot.inventory.containsAnyIds(itemIds)) return null;
-        return itemIds.find(itemId => bot.inventory.containsId(itemId)) ?? null;
-    },
-
-    // Get random existing ID.
-    getRandomExistingItemId: (itemIds: number[]) => {
-        if (!bot.inventory.containsAnyIds(itemIds)) return null;
-
-        // Filter to IDs that actually exist in inventory
-        const existingItemIds = itemIds.filter(itemId => bot.inventory.containsId(itemId));
-        if (existingItemIds.length === 0) return null;
-
-        // Pick one at random
-        return existingItemIds[Math.floor(Math.random() * existingItemIds.length)];
-    }
-};
-
-
-/** LOCATION FUNCTIONS **/
-const locationFunctions = {
-
-    // isWebwalking()
-    isWebWalking: () => bot.walking.isWebWalking(),
-
-    // localPlayerDistanceFromWorldPoint(): Returns the number of tiles between the player and a target WorldPoint.
-    localPlayerDistanceFromWorldPoint: (targetWorldPoint: net.runelite.api.coords.WorldPoint) => client.getLocalPlayer().getWorldLocation().distanceTo(targetWorldPoint),
-
-    // isPlayerNearWorldPoint(): Checks if the player is within X tile threshold of the target WorldPoint (5 tiles default).
-    isPlayerNearWorldPoint: (targetWorldPoint: net.runelite.api.coords.WorldPoint, tileThreshold: number = 5) => locationFunctions.localPlayerDistanceFromWorldPoint(targetWorldPoint) <= tileThreshold
-};
-
-
-/** OBJECT FUNCTIONS **/
-const objectFunctions = {
-    tiles: {
-
-        // getFirstAction(): Get first available action on a tile object.
-        getFirstAction: (tileObjectId: number) => bot.objects.getTileObjectComposition(tileObjectId).getActions()[0],
-
-        // getTileObjectById(): Get TileObject by the tile object ID.
-        getTileObjectById: (tileObjectId: number) => {
-            const tileObjects = bot.objects.getTileObjectsWithIds([tileObjectId]);
-            return tileObjects.find(tileObject => tileObject.getId() == tileObjectId) ?? null;
-        },
-
-        // validateTileName(): Validate a tile name by the tile object ID.
-        validateTileName: (tileObjectId: number, tileName: string) => bot.objects.getTileObjectComposition(tileObjectId).getName() == tileName
-    }
-};
-
-
-/** UTILITY FUNCTIONS **/
-const randomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
+// // completeHerbPatch
+// const completeHerbPatch = (herbPatch: typeof herbPatches[number]) => {
+//     bot.printLogMessage(`Completing ${herbPatch.name}.`);
+//     herbPatch.completed = true;
+//     herbPatch.in_progress = false;
+// };
