@@ -1,5 +1,6 @@
 // Function imports
 import {generalFunctions} from './general-functions.js';
+import {inventoryFunctions} from './inventory-functions.js';
 import {logger} from './logger.js';
 import {timeoutManager} from './timeout-manager.js';
 
@@ -46,7 +47,6 @@ export const bankFunctions = {
         }
         return true;
     },
-    
 
     // If the bank is not open, reset to the fallback state.
     requireBankOpen: (
@@ -54,7 +54,7 @@ export const bankFunctions = {
         fallbackState: string,
     ): boolean => {
         if (!bot.bank.isOpen()) {
-            state.main_state = fallbackState;
+            state.mainState = fallbackState;
             return false;
         }
         return true;
@@ -66,7 +66,7 @@ export const bankFunctions = {
         fallbackState: string,
     ): boolean => {
         if (bot.bank.isOpen()) {
-            state.main_state = fallbackState;
+            state.mainState = fallbackState;
             return false;
         }
         return true;
@@ -99,17 +99,10 @@ export const bankFunctions = {
             if (!bot.inventory.containsId(item.id)) {
                 logger(state, 'debug', 'bankFunctions.withdrawMissingItems', `Withdrawing item ID ${item.id} with quantity ${item.quantity}`);
                 item.quantity == 'all' ? bot.bank.withdrawAllWithId(item.id) : bot.bank.withdrawQuantityWithId(item.id, item.quantity);
-                timeoutManager.add({
-                    state,
-                    conditionFunction: () => bot.inventory.containsId(item.id),
-                    initialTimeout: 1,
-                    maxWait: 10,
-                    onFail: () => generalFunctions.handleFailure(state, 'bankFunctions.withdrawMissingItems', `Failed to withdraw item ID ${item.id} after 10 ticks.`, failResetState)
-                });
-                return true;
+                if (!inventoryFunctions.itemInInventoryTimeout(state, item.id, failResetState)) return false;
             }
         }
-        return false;
+        return true;
     },
 
     // Withdraw first that exists.
@@ -123,17 +116,10 @@ export const bankFunctions = {
             if (bot.bank.getQuantityOfId(itemId) >= quantity) {
                 logger(state, 'debug', 'bankFunctions.withdrawFirstExisting', `Withdrawing item ID ${itemId} with quantity ${quantity}`);
                 bot.bank.withdrawQuantityWithId(itemId, quantity);
-                timeoutManager.add({
-                    state,
-                    conditionFunction: () => bot.inventory.containsId(itemId),
-                    initialTimeout: 1,
-                    maxWait: 10,
-                    onFail: () => generalFunctions.handleFailure(state, 'bankFunctions.withdrawMissingItems', `Failed to withdraw item ID ${itemId} after 10 ticks.`, failResetState)
-                });
-                return true;
+                if (!inventoryFunctions.itemInInventoryTimeout(state, itemId, failResetState)) return false;
             }
         }
-        return false;
+        return true;
     },
 
     // Deposit items if required.
