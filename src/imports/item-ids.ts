@@ -1,6 +1,8 @@
 export const itemIds = {
-    bottomlessBucketUltraId: 22997,
+    bottomless_bucket_utlra: 22997,
+    bucket: 1925,
     butterfly_jar: 10012,
+    jug_of_water: 1937,
     pastry_dough: 1953,
     pie_dish: 2313,
     pie_shell: 2315,
@@ -11,7 +13,8 @@ export const itemIds = {
     stamina_potion_2: 12629,
     stamina_potion_3: 12627,
     stamina_potion_4: 12625,
-    jug_of_water: 1937
+    supercompost: 6034,
+    ultracompost: 21483
 };
 
 export const itemIdGroups = {
@@ -65,5 +68,10 @@ export const itemIdGroups = {
         2998, // Toadflax
         3000, // Snapdragon
         30097 // Huasca
+    ],
+    compost: [
+        22997, // Bottomless Bucket (Ultracompost)
+        6034, // Supercompost
+        21483 // Ultracompost
     ]
 }

@@ -28,9 +28,10 @@ export const locationFunctions = {
         state: State,
         worldPoint: net.runelite.api.coords.WorldPoint,
         targetDescription: string,
-        maxWait: number
+        maxWait: number,
+        targetDistance: number = 3
     ): boolean => {
-        const isPlayerAtLocation = () => locationFunctions.isPlayerNearWorldPoint(worldPoint)
+        const isPlayerAtLocation = () => locationFunctions.isPlayerNearWorldPoint(worldPoint, targetDistance)
         if (!isPlayerAtLocation() && !bot.walking.isWebWalking()) {
             logger(state, 'all', 'webWalkTimeout', `Web walking to ${targetDescription}`);
             bot.walking.webWalkStart(worldPoint);

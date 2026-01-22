@@ -85,6 +85,12 @@ export const bankFunctions = {
             quantity: number // Quantity to validate against.
         }[]
     ): boolean => items.some(item => bankFunctions.isQuantityLow(item.id, item.quantity)),
+    
+    // Deposit
+    depositItemsTimeout: {
+        all: (state: State, failResetState?: string) => depositItemsTimeoutBase(state, undefined, failResetState),
+        some: (state: State, itemId: number, failResetState?: string) => depositItemsTimeoutBase(state, itemId, failResetState)
+    },
 
     // Withdraw missing items from the bank one at a time using timeoutManager
     withdrawMissingItems: (
@@ -99,7 +105,7 @@ export const bankFunctions = {
             if (!bot.inventory.containsId(item.id)) {
                 logger(state, 'debug', 'bankFunctions.withdrawMissingItems', `Withdrawing item ID ${item.id} with quantity ${item.quantity}`);
                 item.quantity == 'all' ? bot.bank.withdrawAllWithId(item.id) : bot.bank.withdrawQuantityWithId(item.id, item.quantity);
-                if (!inventoryFunctions.itemInInventoryTimeout(state, item.id, failResetState)) return false;
+                if (!inventoryFunctions.itemInventoryTimeout.present(state, item.id, failResetState)) return false;
             }
         }
         return true;
@@ -116,34 +122,32 @@ export const bankFunctions = {
             if (bot.bank.getQuantityOfId(itemId) >= quantity) {
                 logger(state, 'debug', 'bankFunctions.withdrawFirstExisting', `Withdrawing item ID ${itemId} with quantity ${quantity}`);
                 bot.bank.withdrawQuantityWithId(itemId, quantity);
-                if (!inventoryFunctions.itemInInventoryTimeout(state, itemId, failResetState)) return false;
+                if (!inventoryFunctions.itemInventoryTimeout.present(state, itemId, failResetState)) return false;
             }
         }
         return true;
     },
-
-    // Deposit items if required.
-    depositAllItems: (
-        state: State,
-        itemId: number,
-        failResetState?: string
-    ): boolean => {
-        const currentEmptySlots = bot.inventory.getEmptySlots();
-        if (currentEmptySlots == 28) return true; // Return if nothing to deposit.
-
-        // If itemId = 0 for deposit all, or if item ID exists in inventory
-        if (!itemId || (itemId && bot.inventory.containsId(itemId))) {
-            logger(state, 'debug', 'bankFunctions.depositAllItems', `Depositing ${itemId ? `item ID ${itemId}` : 'all items'}`);
-            itemId ? bot.bank.depositAllWithId(itemId) : bot.bank.depositAll();
-            timeoutManager.add({
-                state,
-                conditionFunction: () => currentEmptySlots < bot.inventory.getEmptySlots(),
-                initialTimeout: 1,
-                maxWait: 10,
-                onFail: () => generalFunctions.handleFailure(state, 'bankFunctions.depositAllItems', `Failed to deposit ${itemId ? `item ID ${itemId}` : 'all items'} after 10 ticks.`, failResetState)
-            });
-            return false;
-        }
-        return true;
-    }
 };
+
+// Deposit items if required.
+const depositItemsTimeoutBase = (
+    state: State,
+    itemId: number | undefined,
+    failResetState?: string
+): boolean => {
+    const currentEmptySlots = bot.inventory.getEmptySlots();
+    if (currentEmptySlots == 28) return true; // Return if nothing to deposit.
+    if (!itemId || (itemId && bot.inventory.containsId(itemId))) {
+        logger(state, 'debug', 'bankFunctions.depositItemsTimeout', `Depositing ${itemId ? `item ID ${itemId}` : 'all items'}`);
+        itemId ? bot.bank.depositAllWithId(itemId) : bot.bank.depositAll();
+        timeoutManager.add({
+            state,
+            conditionFunction: () => currentEmptySlots < bot.inventory.getEmptySlots(),
+            initialTimeout: 1,
+            maxWait: 10,
+            onFail: () => generalFunctions.handleFailure(state, 'bankFunctions.depositItemsTimeout', `Failed to deposit ${itemId ? `item ID ${itemId}` : 'all items'} after 10 ticks.`, failResetState)
+        });
+        return false;
+    }
+    return true;
+}

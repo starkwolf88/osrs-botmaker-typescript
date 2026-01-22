@@ -9,6 +9,20 @@ import {State} from './types.js';
 // inventoryFunctions
 export const inventoryFunctions = {
 
+    // Drop item
+    dropItem: (
+        state: State,
+        itemId: number,
+        failResetState?: string
+    ): boolean => {
+        if (bot.inventory.containsId(itemId)) {
+            bot.inventory.interactWithIds([itemId], ['Drop']);
+            inventoryFunctions.itemInventoryTimeout.absent(state, itemId, failResetState)
+            return false;
+        }
+        return true;
+    },
+
     // Returns the first item ID from the inventory that exists within `itemIds`.
     getFirstExistingItemId: (
         itemIds: number[] // Item ID's array to check against.
@@ -46,24 +60,32 @@ export const inventoryFunctions = {
         return true;
     },
 
-    // Timeout until item is inventory.
-    itemInInventoryTimeout: (
-        state: State,
-        itemId: number,
-        failResetState?: string
-    ): boolean => {
-        if (!bot.inventory.containsId(itemId)) {
-            logger(state, 'debug', 'inventoryFunctions.itemInInventoryTimeout', `Item ID ${itemId} not in the inventory.`);
-            timeoutManager.add({
-                state,
-                conditionFunction: () => bot.inventory.containsId(itemId),
-                initialTimeout: 1,
-                maxWait: 10,
-                onFail: () => generalFunctions.handleFailure(state, 'inventoryFunctions.itemInInventoryTimeout', `Item ID ${itemId} not in inventory after 10 ticks.`, failResetState)
-            });
-            return false;
-        }
-        logger(state, 'debug', 'inventoryFunctions.itemInInventoryTimeout', `Item ID ${itemId} is in the inventory.`);
-        return true;
+    // Timeout until item is present/absent from inventory.
+    itemInventoryTimeout: {
+        present: (state: State, itemId: number, failResetState?: string): boolean =>itemInventoryTimeoutCore(state, itemId, failResetState, true),
+        absent: (state: State, itemId: number, failResetState?: string): boolean => itemInventoryTimeoutCore(state, itemId, failResetState, false)
     }
 };
+
+function itemInventoryTimeoutCore(
+    state: State,
+    itemId: number,
+    failResetState?: string,
+    waitForPresence: boolean = true
+): boolean {
+    const inInventory = bot.inventory.containsId(itemId);
+    const shouldPass = waitForPresence ? inInventory : !inInventory;
+    if (!shouldPass) {
+        logger(state, 'debug', 'inventoryFunctions.itemInventoryTimeout', `Item ID ${itemId} ${waitForPresence ? 'not in' : 'still in'} inventory.`);
+        timeoutManager.add({
+            state,
+            conditionFunction: () => waitForPresence ? bot.inventory.containsId(itemId) : !bot.inventory.containsId(itemId),
+            initialTimeout: 1,
+            maxWait: 10,
+            onFail: () => generalFunctions.handleFailure(state, 'inventoryFunctions.itemInventoryTimeout', `Item ID ${itemId} ${waitForPresence ? 'not in' : 'still in'} inventory after 10 ticks.`, failResetState)
+        });
+        return false;
+    }
+    logger(state, 'debug', 'inventoryFunctions.itemInventoryTimeout', `Item ID ${itemId} is ${waitForPresence ? 'in' : 'not in'} inventory.`);
+    return true;
+}

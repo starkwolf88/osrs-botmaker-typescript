@@ -106,9 +106,8 @@ const stateManager = () => {
         // Deposit items. Reset to `close_bank` on failure.
         case 'deposit_items': {
             if (!bankFunctions.requireBankOpen(state, 'open_bank') || !bot.localPlayerIdle()) break;
-            let depositItemId = itemCombinationData.combined_item_id;
-            if (itemCombinationData.deposit_all || !state.startDepositAllCompleted) depositItemId = 0; // 0 = deposit all
-            if (!bankFunctions.depositAllItems(state, depositItemId, 'close_bank')) break;
+            const timeoutTrue = itemCombinationData.deposit_all || !state.startDepositAllCompleted ? bankFunctions.depositItemsTimeout.all(state, 'close_bank') : bankFunctions.depositItemsTimeout.some(state, itemCombinationData.combined_item_id, 'close_bank');
+            if (!timeoutTrue) break;
             state.startDepositAllCompleted = true;
             state.mainState = 'check_bank_quantities';
             break;

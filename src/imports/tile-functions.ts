@@ -1,6 +1,6 @@
 export const tileFunctions = {
 
-    // Returns first available action on a tile object.
+    // Returns available action on a tile object.
     getAction: (
         tileObjectId: number, // Tile object ID.
         actionIndexToGet: number

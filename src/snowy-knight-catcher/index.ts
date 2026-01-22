@@ -123,7 +123,7 @@ const stateManager = () => {
         // Deposit items into the bank.
         case 'deposit_items': {
             if (!bankFunctions.requireBankOpen(state, 'open_bank') || !bot.localPlayerIdle()) break;
-            if (!bankFunctions.depositAllItems(state, 0, 'close_bank')) break;
+            if (!bankFunctions.depositItemsTimeout.all(state, 'close_bank')) break;
             state.mainState = 'check_bank_quantities';
             break;
         }

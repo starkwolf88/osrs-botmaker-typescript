@@ -14,7 +14,7 @@ export const locationCoords: LocationCoords = {
         mahogany_homes: [2991, 3366, 0]
     },
     farming_guild: {
-        herb_patch: [1240, 3730, 0]
+        herb_patch: [1237, 3732, 0]
     },
     hosidious: {
         herb_patch: [1740, 3550, 0]
