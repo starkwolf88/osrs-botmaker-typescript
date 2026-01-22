@@ -1,5 +1,5 @@
-// Start with herb seeds and ultracompost in inventory
-// Withdraws bottomless bucket from Tool Leprechaun if ultracompost not in inventory
+// Start with herb seeds and relevant ultracompost quantity in your inventory.
+// If using bottomless bucket, the script will withdraw it from the Tool Leprechaun along with all tools.
 
 // Data imports
 import {locationCoords} from '../imports/location-coords.js';
