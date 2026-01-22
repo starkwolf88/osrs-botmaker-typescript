@@ -59,8 +59,6 @@ const scriptLocations = {
 
 const stateManager = () => {
     logger(state, 'debug', `stateManager`, `${state.mainState}`);
-
-    // Determine main state.
     switch(state.mainState) {
 
         // Starting state of the script. Walk to Mons Gratia.
@@ -72,7 +70,7 @@ const stateManager = () => {
                 state.mainState = 'walk_to_bank';
                 break;
             }
-            if (!locationFunctions.webWalkTimeout(state, scriptLocations.monsGratiaSnowyKnightArea, 'Snowy Knight start location.', 200)) break;
+            if (!locationFunctions.webWalkTimeout(state, scriptLocations.monsGratiaSnowyKnightArea, 'Snowy Knight start location.', 200, 5)) break;
             state.mainState = 'catch_snowy_knight';
             break;
         }
