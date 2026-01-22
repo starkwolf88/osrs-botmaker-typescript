@@ -10,8 +10,13 @@ export const widgetFunctions = {
 
     // Returns boolean depending on whether the widget is currently visible.
     widgetExists: (
-        widgetId: number // Widget ID to check whether visible.
-    ): boolean => Boolean(client.getWidget(widgetId)),
+        widgetData: {
+            packed_widget_id: number,
+            identifier: number,
+            opcode: number,
+            p0: number
+        },
+    ): boolean => Boolean(client.getWidget(widgetData.packed_widget_id)),
 
     // Timeout until widget is visible and optionally interact.
     widgetTimeout: (
@@ -24,10 +29,10 @@ export const widgetFunctions = {
         },
         interactWhenFound?: boolean
     ): boolean => {
-        if (!widgetFunctions.widgetExists(widgetData.packed_widget_id)) {
+        if (!widgetFunctions.widgetExists(widgetData)) {
             timeoutManager.add({
                 state,
-                conditionFunction: () => widgetFunctions.widgetExists(widgetData.packed_widget_id) !== null,
+                conditionFunction: () => widgetFunctions.widgetExists(widgetData) !== null,
                 initialTimeout: 1,
                 maxWait: 10,
                 onFail: () => generalFunctions.handleFailure(state, 'widgetFunctions.widgetTimeout', `Widget ID ${widgetData.packed_widget_id} not visible after 10 ticks`)
