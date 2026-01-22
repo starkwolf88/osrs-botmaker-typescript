@@ -284,9 +284,10 @@ const exchangeToolLeprechaun = (withdrawDeposit: 'withdraw' | 'deposit') => {
     }
 
     // Interact with Tool Leprechaun and wait for the interface to be visible.
-    if (!widgetFunctions.widgetExists(widgetData.farming.tool_leprechaun[withdrawDeposit].spade.packed_widget_id)) {
+    const toolLeprechaunInterface = widgetData.farming.tool_leprechaun[withdrawDeposit].spade;
+    if (!widgetFunctions.widgetExists(toolLeprechaunInterface)) {
         bot.npcs.interactSupplied(toolLeprechaun, 'Exchange');
-        if (!widgetFunctions.widgetTimeout(state, widgetData.farming.tool_leprechaun[withdrawDeposit].spade)) return false;
+        if (!widgetFunctions.widgetTimeout(state, toolLeprechaunInterface)) return false;
     }
 
     // Withdraw/deposit tools.
