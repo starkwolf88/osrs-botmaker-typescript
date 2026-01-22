@@ -1,7 +1,10 @@
-// Start with herb seeds and relevant super/ultracompost quantity in your inventory.
-// If using bottomless bucket, the script will withdraw it from the Tool Leprechaun along with all tools.
+// Supports Ardougne, Catherby, Falador, Farming Guild, Hosidious, Morytania and Varlamore
+// Supports Bottomless bucket, supercompost and ultracompost.
 
-// drop bucket
+// Start with herb seeds and required quantity of super/ultracompost in your inventory.
+// If using a bottomless bucket, the script will withdraw it from the Tool Leprechaun along with all tools during the herb run.
+
+// TO DO
 // cure patch. withdraw plant cure.
 
 // Data imports
