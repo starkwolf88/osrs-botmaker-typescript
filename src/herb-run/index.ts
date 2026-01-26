@@ -182,7 +182,7 @@ const stateManager = () => {
             // Check the herb patch is rendered and the tile object exists.
             const herbPatchTileObject = tileFunctions.getTileObjectById(herbPatchInProgress.id);
             if (!herbPatchTileObject || !bot.objects.isNearIds([herbPatchInProgress.id], 15)) {
-                completeHerbPatch(herbPatchInProgress, 'Error getting herb patch tile object.');
+                completeHerbPatch(herbPatchInProgress, 'Error getting herb patch tile object');
                 break;
             }
 
@@ -206,14 +206,14 @@ const stateManager = () => {
 
                         // Check inventory for require quantity of coins.
                         if (inventoryFunctions.isQuantityBelow(itemIds.coins, 41)) {
-                            completeHerbPatch(herbPatchInProgress, 'Not enough coins in inventory for Plant cure.');
+                            completeHerbPatch(herbPatchInProgress, 'Not enough coins in inventory for Plant cure');
                             break;
                         }
 
                         // Find nearby gardener.
                         const gardener = npcFunctions.getFirstNpcByNames(['Elstan', 'Lyra', 'Dantaera', 'Kragen', 'Marisi', 'Harminia', 'Rosie']);
                         if (!gardener) {
-                            completeHerbPatch(herbPatchInProgress, 'Nearby gardener not found for plant cure.');
+                            completeHerbPatch(herbPatchInProgress, 'Nearby gardener not found for buying Plant cure');
                             break;
                         }
 
@@ -241,7 +241,7 @@ const stateManager = () => {
                     // Use Plant cure
                     bot.objects.interactObject('Diseased herbs', 'Cure');
                     state.timeout = 6;
-                    completeHerbPatch(herbPatchInProgress, 'Patch cured.');
+                    completeHerbPatch(herbPatchInProgress, 'Patch cured');
                     break;
                 }
                 case 'Pick': {
@@ -271,7 +271,7 @@ const stateManager = () => {
                     if (!herbSeedId) throw new Error('Ran out of herb seeds.');
                     bot.inventory.itemOnObjectWithIds(herbSeedId, herbPatchTileObject);
                     state.timeout = 6;
-                    completeHerbPatch(herbPatchInProgress, 'Patch completed.');
+                    completeHerbPatch(herbPatchInProgress, 'Patch completed');
                     break;
                 }
             }
@@ -308,7 +308,7 @@ const stateManager = () => {
 };
 
 const completeHerbPatch = (herbPatchInProgress: HerbPatch, reason: string) => {
-    logger(state, 'all', `completeHerbPatch (${state.mainState})`, `Moving onto next herb patch. ${reason}`)
+    logger(state, 'all', `completeHerbPatch (${state.mainState})`, `${reason}. Moving onto next herb patch.`)
     herbPatchInProgress.completed = true;
     herbPatchInProgress.inProgress = false;
     state.mainState = 'assign_herb_patch';
