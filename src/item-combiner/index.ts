@@ -117,7 +117,7 @@ const stateManager = () => {
         case 'check_bank_quantities': {
             if (!bankFunctions.requireBankOpen(state, 'open_bank') || !bot.localPlayerIdle()) break;
             logger(state, 'debug', `stateManager: ${state.mainState}`, 'Checking bank item quantities.');
-            if (bankFunctions.anyQuantitiyLow(itemCombinationData.items)) throw new Error('Ran out of items to combine.');
+            if (bankFunctions.anyQuantitiyBelow(itemCombinationData.items)) throw new Error('Ran out of items to combine.');
             state.mainState = 'withdraw_items';
             break;
         }

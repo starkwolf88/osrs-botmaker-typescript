@@ -1,3 +1,6 @@
 onlyBuiltDependencies:
   - esbuild
   - unrs-resolver
+
+overrides:
+  '@deafwave/osrs-botmaker-types': link:../osrs-botmaker-types

@@ -34,7 +34,7 @@ export const createUi = (
     panel.setBackground(colorScheme.BACKGROUND);
 
     // Main panel
-    const mainPanel = createMainPanel(colorScheme, 'Contract Selection');
+    const mainPanel = createMainPanel(colorScheme, 'Contract Type Selection');
 
     // Contract dropdown menu
     const contractDropdown = createDropdown(

@@ -16,12 +16,19 @@ export const npcFunctions = {
     },
 
     // Returns the first NPC with the specified NPC ID.
-    getFirstNpc: (
-        npcId: number // NPC ID to get.
-    ): net.runelite.api.NPC | undefined => bot.npcs.getWithIds([npcId])[0],
+    getFirstNpcByIds: (npcIds: number[]): net.runelite.api.NPC | false => {
+        const npcsByIds = bot.npcs.getWithIds(npcIds);
+        if (npcsByIds.length > 0) return npcsByIds[0]
+        return false;
+    },
+
+    // Returns the first NPC with the specified name.
+    getFirstNpcByNames: (npcNames: string[]): net.runelite.api.NPC | false => {
+        const npcsByIds = bot.npcs.getWithNames(npcNames);
+        if (npcsByIds.length > 0) return npcsByIds[0]
+        return false;
+    },
 
     // Returns a boolean depending on whether an NPC is rendered.
-    npcExists: (
-        npcId: number // NPC ID to check against.
-    ): boolean => bot.npcs.getWithIds([npcId]).some(npc => npc.getId() === npcId)
+    npcExists: (npcId: number): boolean => bot.npcs.getWithIds([npcId]).some(npc => npc.getId() === npcId)
 }; 

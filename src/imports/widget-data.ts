@@ -12,6 +12,16 @@ export const widgetData = {
         }
     },
     farming: {
+        gardeners: {
+            farming_supplies: {
+                close: {
+                    packed_widget_id: 19660801,
+                    identifier: 1,
+                    opcode: 57,
+                    p0: 11
+                }
+            }
+        },
         tool_leprechaun: {
             deposit: {
                 rake: {

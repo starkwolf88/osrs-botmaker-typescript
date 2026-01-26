@@ -60,6 +60,12 @@ export const inventoryFunctions = {
         return true;
     },
 
+    // Returns a boolean depending on whether the inventory item quantity is lower than the specified quantity.
+    isQuantityBelow: (
+        itemId: number, // Item ID of the item to check.
+        quantity: number // Quantity to validate against.
+    ): boolean => bot.inventory.getQuantityOfId(itemId) < quantity,
+
     // Timeout until item is present/absent from inventory.
     itemInventoryTimeout: {
         present: (state: State, itemId: number, failResetState?: string): boolean =>itemInventoryTimeoutCore(state, itemId, failResetState, true),

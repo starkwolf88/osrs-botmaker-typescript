@@ -1,9 +1,6 @@
 export const onGameTick = () => {
-    const widget = client.getWidget(17694736);
-    if (widget) {
-        bot.printLogMessage('WIDGET SHOWING')
-    } else {
-        bot.printLogMessage('WIDGET NOT SHOWING')
+    const npcsByNames = bot.npcs.getWithNames(["Dantaera"])
+    if (npcsByNames.length > 0) {
+        bot.printGameMessage(npcsByNames[0].getName())
     }
 };
-onGameTick();

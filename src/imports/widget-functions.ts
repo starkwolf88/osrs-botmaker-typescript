@@ -8,6 +8,17 @@ import {timeoutManager} from './timeout-manager.js';
 // widgetFunctions
 export const widgetFunctions = {
 
+    // Interact widget
+    interact: (
+        widgetData: {
+            packed_widget_id: number,
+            identifier: number,
+            opcode: number,
+            p0: number,
+            p1?: number
+        }
+    ): void => typeof widgetData.p1 === "number" ? bot.widgets.interactSpecifiedWidget(widgetData.packed_widget_id, widgetData.identifier, widgetData.opcode, widgetData.p0, widgetData.p1) : bot.widgets.interactSpecifiedWidget(widgetData.packed_widget_id, widgetData.identifier, widgetData.opcode, widgetData.p0),
+
     // Returns boolean depending on whether the widget is currently visible.
     widgetExists: (
         widgetData: {

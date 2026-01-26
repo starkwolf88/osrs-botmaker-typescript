@@ -17,6 +17,7 @@ import {widgetFunctions} from '../imports/widget-functions.js';
 
 // Type imports
 import {HerbPatch} from '../imports/types.js';
+import { shopFunctions } from '../imports/shop-functions.js';
 
 // Variables
 const state = {
@@ -181,7 +182,7 @@ const stateManager = () => {
             // Check the herb patch is rendered and the tile object exists.
             const herbPatchTileObject = tileFunctions.getTileObjectById(herbPatchInProgress.id);
             if (!herbPatchTileObject || !bot.objects.isNearIds([herbPatchInProgress.id], 15)) {
-                completeHerbPatch(herbPatchInProgress);
+                completeHerbPatch(herbPatchInProgress, 'Error getting herb patch tile object.');
                 break;
             }
 
@@ -200,8 +201,46 @@ const stateManager = () => {
                     state.timeout = 8;
                     break;
                 }
-                case 'Cure': { // TO DO
-                    completeHerbPatch(herbPatchInProgress);
+                case 'Cure': {
+                    if (!bot.inventory.containsId(itemIds.plant_cure)) {
+
+                        // Check inventory for require quantity of coins.
+                        if (inventoryFunctions.isQuantityBelow(itemIds.coins, 41)) {
+                            completeHerbPatch(herbPatchInProgress, 'Not enough coins in inventory for Plant cure.');
+                            break;
+                        }
+
+                        // Find nearby gardener.
+                        const gardener = npcFunctions.getFirstNpcByNames(['Elstan', 'Lyra', 'Dantaera', 'Kragen', 'Marisi', 'Harminia', 'Rosie']);
+                        if (!gardener) {
+                            completeHerbPatch(herbPatchInProgress, 'Nearby gardener not found for plant cure.');
+                            break;
+                        }
+
+                        // Trade gardener.
+                        if (!bot.shop.isOpen()) {
+                            bot.npcs.interactSupplied(gardener, 'Trade');
+                            shopFunctions.openTimeout(state);
+                            break;
+                        }
+
+                        // Buy Plant cure and timeout until it's in inventory.
+                        if (!inventoryFunctions.itemInventoryTimeout.present(state, itemIds.plant_cure)) {
+                            bot.shop.buy(itemIds.plant_cure, 1);
+                            break;
+                        }
+                    }
+
+                    // Close shop interface.
+                    if (bot.shop.isOpen()) {
+                        widgetFunctions.interact(widgetData.farming.gardeners.farming_supplies.close);
+                        shopFunctions.closeTimeout(state);
+                        break;
+                    }
+
+                    // Use Plant cure
+                    bot.objects.interactObject('Diseased herbs', 'Cure');
+                    state.timeout = 6;
                     break;
                 }
                 case 'Pick': {
@@ -231,7 +270,7 @@ const stateManager = () => {
                     if (!herbSeedId) throw new Error('Ran out of herb seeds.');
                     bot.inventory.itemOnObjectWithIds(herbSeedId, herbPatchTileObject);
                     state.timeout = 6;
-                    completeHerbPatch(herbPatchInProgress);
+                    completeHerbPatch(herbPatchInProgress, 'Patch completed.');
                     break;
                 }
             }
@@ -267,8 +306,8 @@ const stateManager = () => {
     }
 };
 
-const completeHerbPatch = (herbPatchInProgress: HerbPatch) => {
-    logger(state, 'all', `completeHerbPatch (${state.mainState})`, 'Moving onto next herb patch.')
+const completeHerbPatch = (herbPatchInProgress: HerbPatch, reason: string) => {
+    logger(state, 'all', `completeHerbPatch (${state.mainState})`, `Moving onto next herb patch. ${reason}`)
     herbPatchInProgress.completed = true;
     herbPatchInProgress.inProgress = false;
     state.mainState = 'assign_herb_patch';

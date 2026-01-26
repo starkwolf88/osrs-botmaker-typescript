@@ -28,6 +28,6 @@
 		".prettierignore": true,
 		".prettierrc": true,
 		"pnpm-lock.yaml": true,
-		"rollup.config.js": true
+		// "rollup.config.js": true
 	}
 }
