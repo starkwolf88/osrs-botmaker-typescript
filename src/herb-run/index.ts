@@ -241,6 +241,7 @@ const stateManager = () => {
                     // Use Plant cure
                     bot.objects.interactObject('Diseased herbs', 'Cure');
                     state.timeout = 6;
+                    completeHerbPatch(herbPatchInProgress, 'Patch cured.');
                     break;
                 }
                 case 'Pick': {
