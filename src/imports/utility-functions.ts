@@ -1,9 +1,7 @@
 export const utilityFunctions = {
 
     // Returns a title cased string.
-    convertToTitleCase: (
-        stringToConvert: string, // String to convert to title case.
-    ): string => stringToConvert.toLowerCase().split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
+    convertToTitleCase: (stringToConvert: string): string => stringToConvert.toLowerCase().split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
 
     // Find value in array of objects that matches the values provided.
     getObjectByValues: <

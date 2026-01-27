@@ -14,17 +14,34 @@ export type State = {
     timeout: number;
 
     // Optional
+    lastChatMessage?: {
+        type: string;
+        name: string;
+        message: string;
+    };
     scriptInitialised?: boolean;
     sub_state?: string;
     uiCompleted?: boolean;
     useStaminas?: boolean;
 
-    // Item combiner
+    // Item Combiner
     itemCombinationData?: ItemCombinationData;
     startDepositAllCompleted?: boolean;
 
-    // Herb run
+    // Herb Run
     herbPatches?: HerbPatch[]
+
+    // Mahogany Homes
+    contract?: Contract
+}
+
+export type Contract = {
+    id: number;
+    name: string;
+    location: string;
+    worldPoint: net.runelite.api.coords.WorldPoint;
+    hotspotIds: number[];
+    ladderIds: number[];
 }
 
 export type ItemCombinationData = {

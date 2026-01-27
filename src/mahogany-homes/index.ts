@@ -1,18 +1,23 @@
 // Requirements
 // ThePlug continue clicker OFF
 
+// Data imports
+import {contractData, hotspotVarbits} from './contract-data.js';
+import {npcIds} from 'src/imports/npc-ids.js';
+
 // Function imports
-import {logger} from 'src/imports/logger.js';
 import {createUi} from './ui.js';
 import {generalFunctions} from 'src/imports/general-functions.js';
 import {locationFunctions} from 'src/imports/location-functions.js';
-// import {utilityFunctions} from 'src/imports/utility-functions.js';
-import {npcFunctions} from 'src/imports/npc-functions.js';
 import {locationCoords} from 'src/imports/location-coords.js';
-import {npcIds} from 'src/imports/npc-ids.js';
-// import {timeoutManager} from 'src/imports/timeout-manager.js';
-import {widgetData} from 'src/imports/widget-data.js';
-import {widgetFunctions} from 'src/imports/widget-functions.js';
+import {logger} from 'src/imports/logger.js';
+import {npcFunctions} from 'src/imports/npc-functions.js';
+import {playerStateFunctions} from '../imports/player-state-functions.js';
+import {tileFunctions} from '../imports/tile-functions.js';
+
+// Type imports
+import {Contract} from '../imports/types.js';
+import { objectFunctions } from '../imports/object-functions.js';
 
 // Variables
 const state = {
@@ -20,31 +25,46 @@ const state = {
     // Core
     antibanEnabled: true,
     antibanTriggered: false,
-    debugEnabled: false,
+    debugEnabled: true,
     debugFullState: false,
     failureCounts: {},
     failureOrigin: '',
     gameTick: 0,
     lastFailureKey: '',
-    mainState: 'walk_to_amy',
+    // mainState: 'walk_to_amy',
+    mainState: 'build_furniture', // TESTING
     scriptName: '[Stark] Mahogany Homes',
     timeout: 0,
 
     // Optional
+    lastChatMessage: {
+        type: '',
+        name: '',
+        message: ''
+    },
     scriptInitialised: false,
     uiCompleted: false,
 
     // Script specific
-    contract: false,
+    // contract: {} as Contract,
+    contract:    {
+        id: 10421,
+        name: 'Jess',
+        location: 'Ardougne',
+        worldPoint: locationFunctions.coordsToWorldPoint([2621, 3292, 0]),
+        hotspotIds: [40171, 40172, 40173, 40174, 40175, 40176, 40177, 40299],
+        ladderIds: [17026, 16685]
+    }, // TESTING
+
     contractType: 'beginner'
 };
 
-// Widget data
-const scriptWidgets = {
-    contractSelect: widgetData.dialogue.mahogany_homes.amy.select_contract
-}
+// Script locations
+const scriptLocations = {
+    faladorMahoganyHomes: locationFunctions.coordsToWorldPoint(locationCoords.falador.mahogany_homes),
+};
 
-// Functions
+// Core functions
 export const onStart = () => {
     try {
         createUi(state);
@@ -54,8 +74,6 @@ export const onStart = () => {
         bot.terminate();
     }
 };
-
-
 export const onGameTick = () => {
 
     // Breaks disabled
@@ -75,13 +93,10 @@ export const onGameTick = () => {
         bot.terminate();
     }
 };
-
+export const onChatMessage = (type: string, name: string, message: string) => generalFunctions.saveChatMessage(state, type, name, message);
 export const onEnd = () => generalFunctions.endScript(state);
 
-const scriptLocations = {
-    faladorMahoganyHomes: locationFunctions.coordsToWorldPoint(locationCoords.falador.mahogany_homes),
-};
-
+// Script functions
 const stateManager = () => {
     logger(state, 'debug', `stateManager`, `${state.mainState}`);
     switch(state.mainState) {
@@ -99,31 +114,91 @@ const stateManager = () => {
         }
 
         // Get contract from Any.
-        case 'get_contract': {
+        case 'get_contract': { 
 
-            // // Interact with Amy.
-            // const amyNpc = npcFunctions.getFirstNpc(npcIds.falador.amy);
-            // if (!amyNpc) throw new Error('NPC Amy cannot be found.');
+            // Interact with Amy.
+            const amyNpc = npcFunctions.getFirstNpcByIds([npcIds.falador.amy]);
+            if (!amyNpc) {
+                generalFunctions.handleFailure(state, `stateManager (${state.mainState})`, 'Error locating Amy.', 'walk_to_amy');
+                break;
+            }
+            if (!playerStateFunctions.isInDialogue()) {
+                bot.npcs.interactSupplied(amyNpc, 'Contract');
+                break;
+            }
 
-            // // Contract select.
-            // if (!widgetFunctions.widgetExists(scriptWidgets.contractSelect)) {
-            //     bot.npcs.interactSupplied(amyNpc, 'Contract');
-            //     if (!widgetFunctions.widgetTimeout(state, scriptWidgets.contractSelect)) break;
-            // }
-    
-            // // @ts-expect-error needs type fix
-            // if (bot.widgets.handleDialogue([
-            //     `${state.contractType} Contract`,
-            //     'Could I have a',
-            //     'What\'s my current'
-            // ])) {
-            //     state.timeout = 1;
-            //     break;
-            // }
+            // Check for contract type
+            if (state.lastChatMessage.type.toString() == 'DIALOG') {
+                const contract = state.lastChatMessage.message.toString().toLowerCase();
+                const foundContract = contractData.find(npcContract => contract.includes(npcContract.name.toLowerCase()));
+                if (foundContract) {
+                    state.contract = foundContract;
+                    // bot.bmGlobalCache.saveInt('contractNpcId', state.contract.id);
+                    state.mainState = 'withdraw_materials';
+                    break;
+                }
+            }
 
+            // Handle dialogue options.
+            // @ts-expect-error needs type fix
+            if (bot.widgets.handleDialogue([
+                `${state.contractType} Contract`,
+                'Could I have a',
+                'my current construction contract'
+            ])) {
+                state.timeout = 1;
+                break;
+            }
+            break;
+        }
+
+        // Withdraw materials.
+        case 'withdraw_materials': {
+            state.mainState = 'walk_to_contract';
+            break;
+        }
+
+        // Walk to contract location.
+        case 'walk_to_contract': {
+            if (!bot.localPlayerIdle() || bot.walking.isWebWalking()) break;
+            if (!locationFunctions.webWalkTimeout(state, state.contract.worldPoint, `${state.contract.name} in ${state.contract.location}`, 120, 2)) break;
+            state.mainState = 'build_furniture';
+            break;
+        }
+
+        // Build furniture
+        case 'build_furniture': {
+            if (!bot.localPlayerIdle() || bot.walking.isWebWalking()) break;
             
+            // Iterate hotspots to get actions and interact if furniture needs removing/repairing
+            state.contract.hotspotIds.forEach(hotspotId => {
 
-            break;   
+                // 3 = remove/repair. 4 = build. 5 = done
+                const varbitId = objectFunctions.getVarbitIdFromArrays(hotspotVarbits, hotspotId);
+                if (!varbitId) return // do something here
+
+
+
+
+                bot.printGameMessage(`${hotspotId} - varbit - ${client.getVarbitValue(10558)}`)
+                // const actions = tileFunctions.getAllActions(hotspotId);
+                // let interactAction = '';
+                // if (actions.includes('Repair')) interactAction = 'Repair';
+                // if (actions.includes('Remove')) interactAction = 'Remove';
+                // if (interactAction) {
+                //     const hotspotTileObject = tileFunctions.getTileObjectById(hotspotId);
+                //     if (hotspotTileObject) {
+                //         bot.objects.interactSuppliedObject(hotspotTileObject, interactAction);
+                //         state.timeout = 2;
+                //     }
+                // }
+            });
+            break;
+        }
+
+        // Speak to contract NPC.
+        case 'speak_to_contract_npc': {
+            break;
         }
     }
 };

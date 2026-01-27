@@ -43,8 +43,8 @@ export const createUi = (
         [
             'Beginner',
             'Novice',
-            'Intermediate',
-            'Expert'
+            // 'Intermediate',
+            // 'Expert'
         ],
         'Beginner',
         colorScheme.TEXT,

@@ -6,6 +6,11 @@ export const tileFunctions = {
         actionIndexToGet: number
     ): string => bot.objects.getTileObjectComposition(tileObjectId).getActions()[actionIndexToGet],
 
+    // Returns alla ctions on a tile object.
+    getAllActions: (
+        tileObjectId: number // Tile object ID.
+    ): string[] => bot.objects.getTileObjectComposition(tileObjectId).getActions(),
+
     // Returns TileObject using the tile object ID.
     getTileObjectById: (
         tileObjectId: number // Tile object ID

@@ -77,5 +77,18 @@ export const generalFunctions = {
         bot.printGameMessage(`Terminating ${state.scriptName}.`);
         bot.walking.webWalkCancel(); // Cancel any web walking.
         bot.events.unregisterAll(); // Unregister all events.
+    },
+
+    // Save chat message.
+    saveChatMessage: (
+        state: State,
+        type: string,
+        name: string,
+        message: string
+    ): void => {
+        if (!state.lastChatMessage) return;
+        state.lastChatMessage.type = type;
+        state.lastChatMessage.name = name;
+        state.lastChatMessage.message = message;
     }
 };
