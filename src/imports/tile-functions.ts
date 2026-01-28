@@ -19,6 +19,14 @@ export const tileFunctions = {
         return tileObjects.find(tileObject => tileObject.getId() === tileObjectId);
     },
 
+    // Returns an array of TileObjects using the tile object ID's.
+    getTileObjectsByIds: (
+        tileObjectIds: number[]
+    ): net.runelite.api.TileObject[] | undefined => {
+        const tileObjects = bot.objects.getTileObjectsWithIds(tileObjectIds);
+        return tileObjects.length > 0 ? tileObjects : undefined;
+    },
+
     // Returns a boolean depending on whether a tile object matches the `tileName`.
     validateTileName: (
         tileObjectId: number, // Tile object ID to validate.

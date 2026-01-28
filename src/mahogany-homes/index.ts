@@ -13,11 +13,12 @@ import {locationCoords} from 'src/imports/location-coords.js';
 import {logger} from 'src/imports/logger.js';
 import {npcFunctions} from 'src/imports/npc-functions.js';
 import {playerStateFunctions} from '../imports/player-state-functions.js';
-import {tileFunctions} from '../imports/tile-functions.js';
+// import {tileFunctions} from '../imports/tile-functions.js';
 
 // Type imports
-import {Contract} from '../imports/types.js';
+// import {Contract} from '../imports/types.js';
 import { objectFunctions } from '../imports/object-functions.js';
+import { tileFunctions } from '../imports/tile-functions.js';
 
 // Variables
 const state = {
@@ -47,7 +48,7 @@ const state = {
 
     // Script specific
     // contract: {} as Contract,
-    contract:    {
+    contract: {
         id: 10421,
         name: 'Jess',
         location: 'Ardougne',
@@ -93,12 +94,19 @@ export const onGameTick = () => {
         bot.terminate();
     }
 };
-export const onChatMessage = (type: string, name: string, message: string) => generalFunctions.saveChatMessage(state, type, name, message);
+export const onChatMessage = (type: string, name: string, message: string) => {
+    bot.printLogMessage(`${type} - ${name} - ${message}`) // TESTING
+    if (type.toString() == 'DIALOG') contractCheck(message);
+}
 export const onEnd = () => generalFunctions.endScript(state);
 
 // Script functions
 const stateManager = () => {
     logger(state, 'debug', `stateManager`, `${state.mainState}`);
+
+    // // Contract check
+    // state.contract.id ? state.mainState = 'withdraw_items' : state.mainState = 'walk_to_amy';
+
     switch(state.mainState) {
 
         // Starting state of the script. Walk to Amy's house in Falador.
@@ -127,28 +135,15 @@ const stateManager = () => {
                 break;
             }
 
-            // Check for contract type
-            if (state.lastChatMessage.type.toString() == 'DIALOG') {
-                const contract = state.lastChatMessage.message.toString().toLowerCase();
-                const foundContract = contractData.find(npcContract => contract.includes(npcContract.name.toLowerCase()));
-                if (foundContract) {
-                    state.contract = foundContract;
-                    // bot.bmGlobalCache.saveInt('contractNpcId', state.contract.id);
-                    state.mainState = 'withdraw_materials';
-                    break;
-                }
-            }
-
             // Handle dialogue options.
             // @ts-expect-error needs type fix
-            if (bot.widgets.handleDialogue([
+            if (!bot.widgets.handleDialogue([
                 `${state.contractType} Contract`,
                 'Could I have a',
                 'my current construction contract'
-            ])) {
-                state.timeout = 1;
-                break;
-            }
+            ])) generalFunctions.handleFailure(state, `stateManager (${state.mainState})`, 'Error getting contract.', 'walk_to_amy');
+
+            state.timeout = 1;
             break;
         }
 
@@ -169,30 +164,53 @@ const stateManager = () => {
         // Build furniture
         case 'build_furniture': {
             if (!bot.localPlayerIdle() || bot.walking.isWebWalking()) break;
-            
-            // Iterate hotspots to get actions and interact if furniture needs removing/repairing
-            state.contract.hotspotIds.forEach(hotspotId => {
 
-                // 3 = remove/repair. 4 = build. 5 = done
-                const varbitId = objectFunctions.getVarbitIdFromArrays(hotspotVarbits, hotspotId);
-                if (!varbitId) return // do something here
+            // Iterate hotspots and check varbit ID.
+            // 1 = Repair. 2 = Repaired. 3 = Remove. 4 = Build. 5 = Built.
+            const contractHotspotIds = state.contract.hotspotIds;
+            const contractHotspotTileIds = tileFunctions.getTileObjectsByIds(contractHotspotIds)
+            if (!contractHotspotTileIds) {
+                // 
+                break;
+            }
+            const closestHotspotTileObject = bot.objects.getClosest(contractHotspotTileIds)
+            const varbitId = objectFunctions.getVarbitIdFromArrays(hotspotVarbits, closestHotspotTileObject.getId());
+            if (!varbitId) {
+                // 
+                break;
+            }
+            bot.printGameMessage(`Closest: ${closestHotspotTileObject.getId().toString()} - ${client.getVarbitValue(varbitId)}`);
+
+            // Build
+            if (client.getVarbitValue(varbitId) == 4) {
+                bot.objects.interactSuppliedObject(closestHotspotTileObject, 'Build');
+                state.timeout = 2;
+                break;
+            }
+
+            // contractHotspotIds.forEach(hotspotId => {
+            //     const varbitId = objectFunctions.getVarbitIdFromArrays(hotspotVarbits, hotspotId);
+            //     if (!varbitId) return;
+            //     const varbitValue = client.getVarbitValue(10558);
+            //     if (varbitValue == 4) {
+            //         bot.objects.interactSuppliedObject(target, 'Remove') // Interact with supplied object
+            //     }
 
 
 
-
-                bot.printGameMessage(`${hotspotId} - varbit - ${client.getVarbitValue(10558)}`)
-                // const actions = tileFunctions.getAllActions(hotspotId);
-                // let interactAction = '';
-                // if (actions.includes('Repair')) interactAction = 'Repair';
-                // if (actions.includes('Remove')) interactAction = 'Remove';
-                // if (interactAction) {
-                //     const hotspotTileObject = tileFunctions.getTileObjectById(hotspotId);
-                //     if (hotspotTileObject) {
-                //         bot.objects.interactSuppliedObject(hotspotTileObject, interactAction);
-                //         state.timeout = 2;
-                //     }
-                // }
-            });
+            //     bot.printGameMessage(`${hotspotId} - varbit - ${client.getVarbitValue(10558)}`)
+            //     // const actions = tileFunctions.getAllActions(hotspotId);
+            //     // let interactAction = '';
+            //     // if (actions.includes('Repair')) interactAction = 'Repair';
+            //     // if (actions.includes('Remove')) interactAction = 'Remove';
+            //     // if (interactAction) {
+            //     //     const hotspotTileObject = tileFunctions.getTileObjectById(hotspotId);
+            //     //     if (hotspotTileObject) {
+            //     //         bot.objects.interactSuppliedObject(hotspotTileObject, interactAction);
+            //     //         state.timeout = 2;
+            //     //     }
+            //     // }
+            // });
             break;
         }
 
@@ -200,5 +218,14 @@ const stateManager = () => {
         case 'speak_to_contract_npc': {
             break;
         }
+    }
+};
+
+const contractCheck = (chatMessage: string) => {
+    const chatMessageLower = chatMessage.toString().toLowerCase();
+    const foundContract = contractData.find(npcContract => chatMessageLower.includes(npcContract.name.toLowerCase()));
+    if (foundContract) {
+        state.contract = foundContract;
+        bot.bmCache.saveInt('contractNpcId', state.contract.id);
     }
 };
