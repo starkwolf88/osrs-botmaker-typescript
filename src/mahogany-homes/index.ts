@@ -3,22 +3,21 @@
 
 // Data imports
 import {contractData, hotspotVarbits} from './contract-data.js';
+import {locationCoords} from 'src/imports/location-coords.js';
 import {npcIds} from 'src/imports/npc-ids.js';
 
 // Function imports
 import {createUi} from './ui.js';
 import {generalFunctions} from 'src/imports/general-functions.js';
 import {locationFunctions} from 'src/imports/location-functions.js';
-import {locationCoords} from 'src/imports/location-coords.js';
 import {logger} from 'src/imports/logger.js';
 import {npcFunctions} from 'src/imports/npc-functions.js';
+import {objectFunctions} from '../imports/object-functions.js';
 import {playerStateFunctions} from '../imports/player-state-functions.js';
-// import {tileFunctions} from '../imports/tile-functions.js';
+import {tileFunctions} from '../imports/tile-functions.js';
 
 // Type imports
-// import {Contract} from '../imports/types.js';
-import { objectFunctions } from '../imports/object-functions.js';
-import { tileFunctions } from '../imports/tile-functions.js';
+import {Contract} from '../imports/types.js';
 
 // Variables
 const state = {
@@ -33,7 +32,7 @@ const state = {
     gameTick: 0,
     lastFailureKey: '',
     // mainState: 'walk_to_amy',
-    mainState: 'build_furniture', // TESTING
+    mainState: 'walk_to_contract',
     scriptName: '[Stark] Mahogany Homes',
     timeout: 0,
 
@@ -49,14 +48,14 @@ const state = {
     // Script specific
     // contract: {} as Contract,
     contract: {
-        id: 10421,
-        name: 'Jess',
-        location: 'Ardougne',
-        worldPoint: locationFunctions.coordsToWorldPoint([2621, 3292, 0]),
-        hotspotIds: [40171, 40172, 40173, 40174, 40175, 40176, 40177, 40299],
-        ladderIds: [17026, 16685]
-    }, // TESTING
-
+        id: 10423,
+        name: 'Leela',
+        location: 'Hosidious',
+        worldPoint: locationFunctions.coordsToWorldPoint([1787, 3591, 0]),
+        hotspotIds: [40007, 40008, 40290, 40291, 40009, 40010, 40292],
+        ladderIds: [11794, 11802],
+        currentFloor: 'bottom'
+    },
     contractType: 'beginner'
 };
 
@@ -75,6 +74,7 @@ export const onStart = () => {
         bot.terminate();
     }
 };
+
 export const onGameTick = () => {
 
     // Breaks disabled
@@ -94,19 +94,17 @@ export const onGameTick = () => {
         bot.terminate();
     }
 };
+
 export const onChatMessage = (type: string, name: string, message: string) => {
     bot.printLogMessage(`${type} - ${name} - ${message}`) // TESTING
     if (type.toString() == 'DIALOG') contractCheck(message);
 }
+
 export const onEnd = () => generalFunctions.endScript(state);
 
 // Script functions
 const stateManager = () => {
     logger(state, 'debug', `stateManager`, `${state.mainState}`);
-
-    // // Contract check
-    // state.contract.id ? state.mainState = 'withdraw_items' : state.mainState = 'walk_to_amy';
-
     switch(state.mainState) {
 
         // Starting state of the script. Walk to Amy's house in Falador.
@@ -137,18 +135,27 @@ const stateManager = () => {
 
             // Handle dialogue options.
             // @ts-expect-error needs type fix
-            if (!bot.widgets.handleDialogue([
+            if (bot.widgets.handleDialogue([
                 `${state.contractType} Contract`,
                 'Could I have a',
                 'my current construction contract'
-            ])) generalFunctions.handleFailure(state, `stateManager (${state.mainState})`, 'Error getting contract.', 'walk_to_amy');
-
-            state.timeout = 1;
+            ])) {
+                state.timeout = 1;
+                break;
+            }
+            
+            generalFunctions.handleFailure(state, `stateManager (${state.mainState})`, 'Error getting contract.', 'walk_to_amy');
             break;
         }
 
         // Withdraw materials.
         case 'withdraw_materials': {
+
+
+            // 1 steel bar
+            // 17 planks
+            // 18 empty inventory spaces required, or terminate
+
             state.mainState = 'walk_to_contract';
             break;
         }
@@ -164,58 +171,94 @@ const stateManager = () => {
         // Build furniture
         case 'build_furniture': {
             if (!bot.localPlayerIdle() || bot.walking.isWebWalking()) break;
+            const validVarbitValues = new Set<number>([1, 3, 4]); // 1 = Repair, 3 = Remove, 4 = Build
 
-            // Iterate hotspots and check varbit ID.
-            // 1 = Repair. 2 = Repaired. 3 = Remove. 4 = Build. 5 = Built.
-            const contractHotspotIds = state.contract.hotspotIds;
-            const contractHotspotTileIds = tileFunctions.getTileObjectsByIds(contractHotspotIds)
-            if (!contractHotspotTileIds) {
-                // 
+            // Get hotspot tile objects.
+            const hotspotTileObjects = tileFunctions.getTileObjectsByIds(state.contract.hotspotIds);
+            if (!hotspotTileObjects) {
+                generalFunctions.handleFailure(state, `stateManager (${state.mainState})`, 'Error getting hotspot tile objects.', 'walk_to_amy');
                 break;
             }
-            const closestHotspotTileObject = bot.objects.getClosest(contractHotspotTileIds)
-            const varbitId = objectFunctions.getVarbitIdFromArrays(hotspotVarbits, closestHotspotTileObject.getId());
+
+            // Filter hotspots that can be interacted with.
+            const validHotspots = hotspotTileObjects.filter(object => {
+                const varbitId = objectFunctions.getVarbitIdFromArrays(hotspotVarbits, object.getId());
+                if (!varbitId) return false;
+                return validVarbitValues.has(client.getVarbitValue(varbitId));
+            });
+
+            // If no valid hotspots, navigate ladder or finish contract.
+            if (validHotspots.length === 0) {
+                state.contract.ladderIds.length > 0 ? state.mainState = 'navigate_ladder' : state.mainState = 'finish_contract';
+                break;
+            }
+
+            // Get closest hotspot.
+            const closestHotspot = bot.objects.getClosest(validHotspots);
+            if (!closestHotspot) {
+                generalFunctions.handleFailure(state, `stateManager (${state.mainState})`, 'Error getting closest hotspot object.', 'walk_to_contract');
+                break;
+            }
+
+            // Get closest hotspot varbit ID.
+            const varbitId = objectFunctions.getVarbitIdFromArrays(hotspotVarbits, closestHotspot.getId());
             if (!varbitId) {
-                // 
+                generalFunctions.handleFailure(state, `stateManager (${state.mainState})`, 'Error getting varbit ID for closest hotspot object.', 'walk_to_contract');
                 break;
             }
-            bot.printGameMessage(`Closest: ${closestHotspotTileObject.getId().toString()} - ${client.getVarbitValue(varbitId)}`);
-
-            // Build
-            if (client.getVarbitValue(varbitId) == 4) {
-                bot.objects.interactSuppliedObject(closestHotspotTileObject, 'Build');
+            const varbitValue = client.getVarbitValue(varbitId);
+            if (varbitValue === 4) { // 4 = Build
+                bot.objects.interactSuppliedObject(closestHotspot, 'Build');
+                state.timeout = 2;
+                break;
+            }
+            if (varbitValue === 1) { // 1 = Repair
+                bot.objects.interactSuppliedObject(closestHotspot, 'Repair');
+                state.timeout = 2;
+                break;
+            }
+            if (varbitValue === 3) { // 3 = Remove
+                bot.objects.interactSuppliedObject(closestHotspot, 'Remove');
                 state.timeout = 2;
                 break;
             }
 
-            // contractHotspotIds.forEach(hotspotId => {
-            //     const varbitId = objectFunctions.getVarbitIdFromArrays(hotspotVarbits, hotspotId);
-            //     if (!varbitId) return;
-            //     const varbitValue = client.getVarbitValue(10558);
-            //     if (varbitValue == 4) {
-            //         bot.objects.interactSuppliedObject(target, 'Remove') // Interact with supplied object
-            //     }
+            generalFunctions.handleFailure(state, `stateManager (${state.mainState})`, 'Error building furniture contract.', 'walk_to_amy');
+            break;
+        }
 
-
-
-            //     bot.printGameMessage(`${hotspotId} - varbit - ${client.getVarbitValue(10558)}`)
-            //     // const actions = tileFunctions.getAllActions(hotspotId);
-            //     // let interactAction = '';
-            //     // if (actions.includes('Repair')) interactAction = 'Repair';
-            //     // if (actions.includes('Remove')) interactAction = 'Remove';
-            //     // if (interactAction) {
-            //     //     const hotspotTileObject = tileFunctions.getTileObjectById(hotspotId);
-            //     //     if (hotspotTileObject) {
-            //     //         bot.objects.interactSuppliedObject(hotspotTileObject, interactAction);
-            //     //         state.timeout = 2;
-            //     //     }
-            //     // }
-            // });
+        // Navigate ladder
+        case 'navigate_ladder': {
+            bot.printGameMessage('NAVIGATE LADDER');
             break;
         }
 
         // Speak to contract NPC.
-        case 'speak_to_contract_npc': {
+        case 'finish_contract': {
+            bot.printGameMessage('FINISH CONTRACT')
+
+            // interact NPC
+
+            // Handle dialogue options.
+            // @ts-expect-error needs type fix
+            if (bot.widgets.handleDialogue([
+                'finished with the work you wanted',
+                'would you like a cup of tea before you go'
+            ])) {
+                state.timeout = 1;
+                break;  
+            }
+
+            // @ts-expect-error needs type fix
+            if (bot.widgets.handleDialogue(['love a cuppa'])) {
+                state.timeout = 2;
+                state.mainState = 'walk_to_amy';
+                bot.bmCache.saveInt('contractNpcId', 0);
+                state.contract = {} as Contract;
+                break;
+            }
+
+            generalFunctions.handleFailure(state, `stateManager (${state.mainState})`, 'Error finishing contract.', 'walk_to_contract');
             break;
         }
     }
@@ -226,6 +269,7 @@ const contractCheck = (chatMessage: string) => {
     const foundContract = contractData.find(npcContract => chatMessageLower.includes(npcContract.name.toLowerCase()));
     if (foundContract) {
         state.contract = foundContract;
+        state.mainState = 'withdraw_materials';
         bot.bmCache.saveInt('contractNpcId', state.contract.id);
     }
 };

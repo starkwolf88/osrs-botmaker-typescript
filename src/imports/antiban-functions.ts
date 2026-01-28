@@ -24,7 +24,7 @@ export const antibanFunctions = {
         state: State
     ): boolean => {
         if (!state.antibanTriggered) {
-            const antibanTimeout = antibanFunctions.getRandomisedAfkTimeout(5, 15, 1, 5) || antibanFunctions.getRandomisedAfkTimeout(1, 5, 1, 5);
+            const antibanTimeout = antibanFunctions.getRandomisedAfkTimeout(5, 15, 0.5, 5) || antibanFunctions.getRandomisedAfkTimeout(1, 5, 0.5, 5);
             if (antibanTimeout > 0) {
                 state.timeout = antibanTimeout;
                 state.antibanTriggered = true;

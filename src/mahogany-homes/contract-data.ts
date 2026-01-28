@@ -11,7 +11,8 @@ export const contractData = [
         location: 'Ardougne',
         worldPoint: locationFunctions.coordsToWorldPoint([2621, 3292, 0]),
         hotspotIds: [40171, 40172, 40173, 40174, 40175, 40176, 40177, 40299],
-        ladderIds: [17026, 16685]
+        ladderIds: [],
+        currentFloor: 'bottom'
     },
     {
         id: 10419,
@@ -19,7 +20,8 @@ export const contractData = [
         location: 'Ardougne',
         worldPoint: locationFunctions.coordsToWorldPoint([2659, 3322, 0]),
         hotspotIds: [40156, 40157, 40158, 40159, 40160, 40161, 40162, 40163],
-        ladderIds: [17026, 16685, 15645, 15648]
+        ladderIds: [17026, 16685, 15645, 15648],
+        currentFloor: 'bottom'
     },
     {
         id: 10420,
@@ -27,7 +29,8 @@ export const contractData = [
         location: 'Ardougne',
         worldPoint: locationFunctions.coordsToWorldPoint([2612, 3316, 0]),
         hotspotIds: [40164, 40165, 40166, 40167, 40168, 40169, 40170],
-        ladderIds: [16683, 16679]
+        ladderIds: [16683, 16679],
+        currentFloor: 'bottom'
     },
 
     // Falador
@@ -37,7 +40,8 @@ export const contractData = [
         location: 'Falador',
         worldPoint: locationFunctions.coordsToWorldPoint([3038, 3364, 0]),
         hotspotIds: [40297, 40095, 40096, 40097, 40298, 40098, 40099],
-        ladderIds: [24075, 24076]
+        ladderIds: [24075, 24076],
+        currentFloor: 'bottom'
     },
     {
         id: 3266,
@@ -45,7 +49,8 @@ export const contractData = [
         location: 'Falador',
         worldPoint: locationFunctions.coordsToWorldPoint([3038, 3344, 0]),
         hotspotIds: [40296, 40089, 40090, 40091, 40092, 40093, 40094],
-        ladderIds: [24082, 24085]
+        ladderIds: [24082, 24085],
+        currentFloor: 'bottom'
     },
     {
         id: 10417,
@@ -53,7 +58,8 @@ export const contractData = [
         location: 'Falador',
         worldPoint: locationFunctions.coordsToWorldPoint([3047, 3345, 0]),
         hotspotIds: [40083, 40084, 40085, 40086, 40087, 40088, 40295],
-        ladderIds: []
+        ladderIds: [],
+        currentFloor: 'bottom'
     },
 
     // Hosidious
@@ -63,15 +69,17 @@ export const contractData = [
         location: 'Hosidious',
         worldPoint: locationFunctions.coordsToWorldPoint([1750, 3534, 0]),
         hotspotIds: [40011, 40293, 40012, 40294, 40013, 40014, 40015],
-        ladderIds: []
+        ladderIds: [],
+        currentFloor: 'bottom'
     },
     {
         id: 10423,
         name: 'Leela',
         location: 'Hosidious',
-        worldPoint: locationFunctions.coordsToWorldPoint([1785, 3592, 0]),
+        worldPoint: locationFunctions.coordsToWorldPoint([1787, 3591, 0]),
         hotspotIds: [40007, 40008, 40290, 40291, 40009, 40010, 40292],
-        ladderIds: [11794, 11802]
+        ladderIds: [11794, 11802],
+        currentFloor: 'bottom'
     },
     {
         id: 10422,
@@ -79,7 +87,8 @@ export const contractData = [
         location: 'Hosidious',
         worldPoint: locationFunctions.coordsToWorldPoint([1766, 3621, 0]),
         hotspotIds: [40002, 40287, 40003, 40288, 40004, 40005, 40006, 40289],
-        ladderIds: [11794, 11802]
+        ladderIds: [11794, 11802],
+        currentFloor: 'bottom'
     },
 
     // Varrock
@@ -89,7 +98,8 @@ export const contractData = [
         location: 'Varrock',
         worldPoint: locationFunctions.coordsToWorldPoint([3238, 3486, 0]),
         hotspotIds: [39981, 39982, 39983, 39984, 39985, 39986, 39987, 39988],
-        ladderIds: [11797, 11799]
+        ladderIds: [11797, 11799],
+        currentFloor: 'bottom'
     },
     {
         id: 10415,
@@ -97,7 +107,8 @@ export const contractData = [
         location: 'Varrock',
         worldPoint: locationFunctions.coordsToWorldPoint([3239, 3450, 0]),
         hotspotIds: [39989, 39990, 39991, 39992, 39993, 39994, 39995, 39996],
-        ladderIds: [11789, 11793]
+        ladderIds: [11789, 11793],
+        currentFloor: 'bottom'
     },
     {
         id: 10416,
@@ -105,7 +116,8 @@ export const contractData = [
         location: 'Varrock',
         worldPoint: locationFunctions.coordsToWorldPoint([3235, 3384, 0]),
         hotspotIds: [39997, 39998, 39999, 40000, 40286, 40001],
-        ladderIds: []
+        ladderIds: [],
+        currentFloor: 'bottom'
     }
 ];
 
