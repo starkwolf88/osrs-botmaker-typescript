@@ -22,7 +22,7 @@ const state = {
     // Core
     antibanEnabled: true,
     antibanTriggered: false,
-    debugEnabled: false,
+    debugEnabled: true,
     debugFullState: false,
     failureCounts: {},
     failureOrigin: '',

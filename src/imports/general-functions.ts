@@ -24,7 +24,7 @@ export const generalFunctions = {
                 state.timeout--;
                 return false;
             }
-            timeoutManager.tick();
+            timeoutManager.tick(state);
             if (timeoutManager.isWaiting()) return false;
 
             // Antiban AFK and break logic
@@ -52,7 +52,7 @@ export const generalFunctions = {
         logger(state, 'debug', 'handleFailure', failureMessage);
 
         // Increment consecutive failure count for this exact failure
-        state.failureCounts[failureKey] = state.lastFailureKey === failureKey ? (state.failureCounts[failureKey] || 1) + 1 : 1;
+        state.failureCounts[failureKey] = state.lastFailureKey === failureKey ? (state.failureCounts[failureKey] || 0) + 1 : 1;
 
         // Remember this failure for next tick
         state.lastFailureKey = failureKey;

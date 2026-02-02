@@ -35,7 +35,7 @@ export const bankFunctions = {
     ): boolean => {
         if (bot.bank.isOpen()) {
             logger(state, 'debug', `bankFunctions.closeBank`, 'Closing the bank');
-            bot.bank.close();
+            // bot.bank.close();
             timeoutManager.add({
                 state,
                 conditionFunction: () => !bot.bank.isOpen(),

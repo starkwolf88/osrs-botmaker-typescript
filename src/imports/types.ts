@@ -41,8 +41,11 @@ export type Contract = {
     location: string;
     worldPoint: net.runelite.api.coords.WorldPoint;
     hotspotIds: number[];
-    ladderIds: number[];
-    currentFloor: string;
+    ladderIds?: {
+        lower: number;
+        upper: number;
+    } | undefined,
+    currentFloor: string
 }
 
 export type ItemCombinationData = {

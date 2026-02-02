@@ -2,7 +2,7 @@
 // ThePlug continue clicker OFF
 
 // Data imports
-import {contractData, hotspotVarbits} from './contract-data.js';
+import {contractData, contractDefault, hotspotVarbits} from './contract-data.js';
 import {locationCoords} from 'src/imports/location-coords.js';
 import {npcIds} from 'src/imports/npc-ids.js';
 
@@ -31,7 +31,7 @@ const state = {
     failureOrigin: '',
     gameTick: 0,
     lastFailureKey: '',
-    // mainState: 'walk_to_amy',
+    // mainState: 'walk_to_amy', // TESTING
     mainState: 'walk_to_contract',
     scriptName: '[Stark] Mahogany Homes',
     timeout: 0,
@@ -46,16 +46,19 @@ const state = {
     uiCompleted: false,
 
     // Script specific
-    // contract: {} as Contract,
-    contract: {
-        id: 10423,
-        name: 'Leela',
-        location: 'Hosidious',
-        worldPoint: locationFunctions.coordsToWorldPoint([1787, 3591, 0]),
-        hotspotIds: [40007, 40008, 40290, 40291, 40009, 40010, 40292],
-        ladderIds: [11794, 11802],
-        currentFloor: 'bottom'
-    },
+    contract: contractDefault as Contract,
+    // contract: {
+    //     id: 10423,
+    //     name: 'Leela',
+    //     location: 'Hosidious',
+    //     worldPoint: locationFunctions.coordsToWorldPoint([1787, 3591, 0]),
+    //     hotspotIds: [40007, 40008, 40290, 40291, 40009, 40010, 40292],
+    //     ladderIds: {
+    //         lower: 11794,
+    //         upper: 11802
+    //     },
+    //     currentFloor: 'lower'
+    // }, // TESTING
     contractType: 'beginner'
 };
 
@@ -150,6 +153,7 @@ const stateManager = () => {
 
         // Withdraw materials.
         case 'withdraw_materials': {
+            if (!bot.localPlayerIdle() || bot.walking.isWebWalking()) break;
 
 
             // 1 steel bar
@@ -189,7 +193,7 @@ const stateManager = () => {
 
             // If no valid hotspots, navigate ladder or finish contract.
             if (validHotspots.length === 0) {
-                state.contract.ladderIds.length > 0 ? state.mainState = 'navigate_ladder' : state.mainState = 'finish_contract';
+                state.mainState = 'current_floor_check';
                 break;
             }
 
@@ -227,14 +231,37 @@ const stateManager = () => {
             break;
         }
 
-        // Navigate ladder
-        case 'navigate_ladder': {
+        // Current floor check. Navigate ladder or finish contract.
+        case 'current_floor_check': {
+            if (!bot.localPlayerIdle() || bot.walking.isWebWalking()) break;
+
+            // If the contract doesn't have ladders, go to `finish_contract` state.
+            if (!state.contract.ladderIds) {
+                state.mainState = 'finish_contract';
+                break;
+            }
+               
+            // If on the lower floor, interact with lower ladder
+            if (state.contract.currentFloor == 'lower') {
+                if (state.contract.ladderIds.lower) {
+                    const ladderTileObject = tileFunctions.getTileObjectById(state.contract.ladderIds.lower)
+                    if (!ladderTileObject) {
+                        generalFunctions.handleFailure(state, `stateManager (${state.mainState})`, 'Error getting ladder tile object.', 'walk_to_contract');
+                        break;
+                    }
+                    bot.objects.interactSuppliedObject(ladderTileObject, 'Climb-up');
+                }
+            } else {
+                //
+            }
+
             bot.printGameMessage('NAVIGATE LADDER');
             break;
         }
 
         // Speak to contract NPC.
         case 'finish_contract': {
+            if (!bot.localPlayerIdle() || bot.walking.isWebWalking()) break;
             bot.printGameMessage('FINISH CONTRACT')
 
             // interact NPC
@@ -254,7 +281,7 @@ const stateManager = () => {
                 state.timeout = 2;
                 state.mainState = 'walk_to_amy';
                 bot.bmCache.saveInt('contractNpcId', 0);
-                state.contract = {} as Contract;
+                state.contract = contractDefault;
                 break;
             }
 
@@ -268,7 +295,7 @@ const contractCheck = (chatMessage: string) => {
     const chatMessageLower = chatMessage.toString().toLowerCase();
     const foundContract = contractData.find(npcContract => chatMessageLower.includes(npcContract.name.toLowerCase()));
     if (foundContract) {
-        state.contract = foundContract;
+        // state.contract = foundContract;
         state.mainState = 'withdraw_materials';
         bot.bmCache.saveInt('contractNpcId', state.contract.id);
     }
