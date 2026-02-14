@@ -9,6 +9,7 @@ import {npcIds} from 'src/imports/npc-ids.js';
 // Function imports
 import {createUi} from './ui.js';
 import {generalFunctions} from 'src/imports/general-functions.js';
+import { handleFailure } from '../imports/failure-handler.js';
 import {locationFunctions} from 'src/imports/location-functions.js';
 import {logger} from 'src/imports/logger.js';
 import {npcFunctions} from 'src/imports/npc-functions.js';
@@ -28,9 +29,7 @@ const state = {
     debugEnabled: true,
     debugFullState: false,
     failureCounts: {},
-    failureOrigin: '',
     gameTick: 0,
-    lastFailureKey: '',
     // mainState: 'walk_to_amy', // TESTING
     mainState: 'walk_to_contract',
     scriptName: '[Stark] Mahogany Homes',
@@ -115,7 +114,7 @@ const stateManager = () => {
             if (!bot.localPlayerIdle() || bot.walking.isWebWalking()) break;
             if (!locationFunctions.webWalkTimeout(state, scriptLocations.faladorMahoganyHomes, 'Amy\'s house.', 200, 2)) break;
             if (!npcFunctions.npcExists(npcIds.falador.amy)) {
-                generalFunctions.handleFailure(state, `stateManager: ${state.mainState}`, 'Unable to locate Amy.');
+                handleFailure(state, `stateManager.${state.mainState}. Error locating Amy Amy`);
                 break;
             }
             state.mainState = 'get_contract';
@@ -128,7 +127,7 @@ const stateManager = () => {
             // Interact with Amy.
             const amyNpc = npcFunctions.getFirstNpcByIds([npcIds.falador.amy]);
             if (!amyNpc) {
-                generalFunctions.handleFailure(state, `stateManager (${state.mainState})`, 'Error locating Amy.', 'walk_to_amy');
+                handleFailure(state, `stateManager.${state.mainState}. Error locating Amy`, 'walk_to_amy');
                 break;
             }
             if (!playerStateFunctions.isInDialogue()) {
@@ -147,7 +146,7 @@ const stateManager = () => {
                 break;
             }
             
-            generalFunctions.handleFailure(state, `stateManager (${state.mainState})`, 'Error getting contract.', 'walk_to_amy');
+            handleFailure(state, `stateManager.${state.mainState}. Error getting contract`, 'walk_to_amy');
             break;
         }
 
@@ -180,7 +179,7 @@ const stateManager = () => {
             // Get hotspot tile objects.
             const hotspotTileObjects = tileFunctions.getTileObjectsByIds(state.contract.hotspotIds);
             if (!hotspotTileObjects) {
-                generalFunctions.handleFailure(state, `stateManager (${state.mainState})`, 'Error getting hotspot tile objects.', 'walk_to_amy');
+                handleFailure(state, `stateManager.${state.mainState}. Error getting hotspot tile objects`, 'walk_to_amy');
                 break;
             }
 
@@ -200,14 +199,14 @@ const stateManager = () => {
             // Get closest hotspot.
             const closestHotspot = bot.objects.getClosest(validHotspots);
             if (!closestHotspot) {
-                generalFunctions.handleFailure(state, `stateManager (${state.mainState})`, 'Error getting closest hotspot object.', 'walk_to_contract');
+                handleFailure(state, `stateManager.${state.mainState}. Error getting closest hotspot object`, 'walk_to_contract');
                 break;
             }
 
             // Get closest hotspot varbit ID.
             const varbitId = objectFunctions.getVarbitIdFromArrays(hotspotVarbits, closestHotspot.getId());
             if (!varbitId) {
-                generalFunctions.handleFailure(state, `stateManager (${state.mainState})`, 'Error getting varbit ID for closest hotspot object.', 'walk_to_contract');
+                handleFailure(state, `stateManager.${state.mainState}. Error getting varbit ID for closest hotspot object`, 'walk_to_contract');
                 break;
             }
             const varbitValue = client.getVarbitValue(varbitId);
@@ -227,7 +226,7 @@ const stateManager = () => {
                 break;
             }
 
-            generalFunctions.handleFailure(state, `stateManager (${state.mainState})`, 'Error building furniture contract.', 'walk_to_amy');
+            handleFailure(state, `stateManager.${state.mainState}. Error building furniture contract`, 'walk_to_amy');
             break;
         }
 
@@ -246,7 +245,7 @@ const stateManager = () => {
                 if (state.contract.ladderIds.lower) {
                     const ladderTileObject = tileFunctions.getTileObjectById(state.contract.ladderIds.lower)
                     if (!ladderTileObject) {
-                        generalFunctions.handleFailure(state, `stateManager (${state.mainState})`, 'Error getting ladder tile object.', 'walk_to_contract');
+                        handleFailure(state, `stateManager.${state.mainState}. Error getting ladder tile object`, 'walk_to_contract');
                         break;
                     }
                     bot.objects.interactSuppliedObject(ladderTileObject, 'Climb-up');
@@ -285,7 +284,7 @@ const stateManager = () => {
                 break;
             }
 
-            generalFunctions.handleFailure(state, `stateManager (${state.mainState})`, 'Error finishing contract.', 'walk_to_contract');
+            handleFailure(state, `stateManager.${state.mainState}. Error finishing contract`, 'walk_to_contract');
             break;
         }
     }

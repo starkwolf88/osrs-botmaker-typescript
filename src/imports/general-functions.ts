@@ -1,6 +1,7 @@
 // Function imports
 import {antibanFunctions} from './antiban-functions.js';
 import {debugFunctions} from './debug-functions.js';
+import { handleFailure } from './failure-handler.js';
 import {logger} from './logger.js';
 import {timeoutManager} from './timeout-manager.js';
 
@@ -24,7 +25,7 @@ export const generalFunctions = {
                 state.timeout--;
                 return false;
             }
-            timeoutManager.tick(state);
+            timeoutManager.tick();
             if (timeoutManager.isWaiting()) return false;
 
             // Antiban AFK and break logic
@@ -34,39 +35,14 @@ export const generalFunctions = {
         } catch (error) {
             const fatalMessage = (error as Error).toString();
             logger(state, 'all', 'Script', fatalMessage);
-            generalFunctions.handleFailure(state, 'gameTick', fatalMessage);
+            handleFailure(state, 'gameTick', fatalMessage);
             return false;
         }
     },
 
-    // Handle failure.
-    handleFailure: (
-        state: State,
-        failureLocation: string,
-        failureMessage: string,
-        failResetState?: string
-    ) => {
-        const failureKey = `${failureLocation} - ${failureMessage}`;
-        
-        // Log the failure
-        logger(state, 'debug', 'handleFailure', failureMessage);
-
-        // Increment consecutive failure count for this exact failure
-        state.failureCounts[failureKey] = state.lastFailureKey === failureKey ? (state.failureCounts[failureKey] || 0) + 1 : 1;
-
-        // Remember this failure for next tick
-        state.lastFailureKey = failureKey;
-        state.failureOrigin = failureKey;
-
-        // Fatal exit if the same failure occurs 3 times consecutively
-        if (state.failureCounts[failureKey] >= 3) {
-            logger(state, 'all', 'Script', `Fatal error: "${failureKey}" occurred 3x in a row.`);
-            bot.terminate();
-            return;
-        }
-
-        // Reset mainState if requested
-        if (failResetState) state.mainState = failResetState;
+    // Clear failures
+    clearFailures: (state: State) => {
+        for (const key in state.failureCounts) delete state.failureCounts[key];
     },
 
     // Code to execute after `onEnd()`.

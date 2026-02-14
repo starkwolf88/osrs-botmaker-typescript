@@ -46,7 +46,7 @@ export const widgetFunctions = {
                 conditionFunction: () => widgetFunctions.widgetExists(widgetData) !== null,
                 initialTimeout: 1,
                 maxWait: 10,
-                onFail: () => generalFunctions.handleFailure(state, 'widgetFunctions.widgetTimeout', `Widget ID ${widgetData.packed_widget_id} not visible after 10 ticks`)
+                failureKey: `widgetFunctions.widgetTimeout. Widget ID ${widgetData.packed_widget_id} not visible`
             });
             return false;
         }

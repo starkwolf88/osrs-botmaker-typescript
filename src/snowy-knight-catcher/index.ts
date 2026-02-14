@@ -148,6 +148,7 @@ const stateManager = () => {
         case 'withdraw_jars': {
             if (!bankFunctions.requireBankOpen(state, 'open_bank') || !bot.localPlayerIdle() || bot.bank.isBanking()) break;
             if (bankFunctions.withdrawMissingItems(state, [{id: itemIds.butterfly_jar, quantity: 'all'}], 'close_bank')) break; 
+            generalFunctions.clearFailures(state);
             state.mainState = 'walk_to_snowy_knights';
             break;
         }

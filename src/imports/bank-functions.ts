@@ -22,7 +22,7 @@ export const bankFunctions = {
                 conditionFunction: () => bot.bank.isOpen(),
                 initialTimeout: 1,
                 maxWait: 10,
-                onFail: () => generalFunctions.handleFailure(state, 'bankFunctions.openBank', 'Bank is not open after 10 ticks.')
+                failureKey: 'bankFunctions.openBank - Bank not opening'
             });
             return false;
         }
@@ -35,13 +35,13 @@ export const bankFunctions = {
     ): boolean => {
         if (bot.bank.isOpen()) {
             logger(state, 'debug', `bankFunctions.closeBank`, 'Closing the bank');
-            // bot.bank.close();
+            bot.bank.close();
             timeoutManager.add({
                 state,
                 conditionFunction: () => !bot.bank.isOpen(),
                 initialTimeout: 1,
                 maxWait: 10,
-                onFail: () => generalFunctions.handleFailure(state, 'bankFunctions.closeBank', 'Bank is not closed after 10 ticks.')
+                failureKey: 'bankFunctions.closeBank - Bank not closing'
             });
             return false;
         }
@@ -145,7 +145,8 @@ const depositItemsTimeoutBase = (
             conditionFunction: () => currentEmptySlots < bot.inventory.getEmptySlots(),
             initialTimeout: 1,
             maxWait: 10,
-            onFail: () => generalFunctions.handleFailure(state, 'bankFunctions.depositItemsTimeout', `Failed to deposit ${itemId ? `item ID ${itemId}` : 'all items'} after 10 ticks.`, failResetState)
+            failureKey: `bankFunctions.depositItemsTimeout. Failed to deposit ${itemId ? `item ID ${itemId}` : 'all items'}`,
+            failResetState
         });
         return false;
     }

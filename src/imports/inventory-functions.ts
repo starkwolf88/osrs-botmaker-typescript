@@ -88,7 +88,8 @@ function itemInventoryTimeoutCore(
             conditionFunction: () => waitForPresence ? bot.inventory.containsId(itemId) : !bot.inventory.containsId(itemId),
             initialTimeout: 1,
             maxWait: 10,
-            onFail: () => generalFunctions.handleFailure(state, 'inventoryFunctions.itemInventoryTimeout', `Item ID ${itemId} ${waitForPresence ? 'not in' : 'still in'} inventory after 10 ticks.`, failResetState)
+            failureKey: `inventoryFunctions.itemInventoryTimeout. Item ID ${itemId} ${waitForPresence ? 'not in' : 'still in'} inventory.`,
+            failResetState
         });
         return false;
     }

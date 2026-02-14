@@ -1,5 +1,4 @@
 // Function imports
-import {generalFunctions} from './general-functions.js';
 import {logger} from './logger.js';
 import {timeoutManager} from './timeout-manager.js';
 
@@ -39,7 +38,7 @@ export const locationFunctions = {
                 state,
                 conditionFunction: () => isPlayerAtLocation(),
                 maxWait,
-                onFail: () => generalFunctions.handleFailure(state, 'webWalkTimeout', `Unable to locate player at ${targetDescription} after ${maxWait} ticks.`)
+                failureKey: `locationFunctions.webWalkTimeout. Unable to locate player at ${targetDescription}`
             });
             return false;
         }

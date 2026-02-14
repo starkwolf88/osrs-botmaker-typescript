@@ -15,6 +15,16 @@ export const utilityFunctions = {
         return item ?? false;
     },
 
+    // Get random object key by value, optionally excluding a key
+    getRandomObjectKeyByValue: <T extends Record<string, any>>(
+        object: T,
+        matchValue: T[keyof T],
+        exclusionKey?: string
+    ): string | null => {
+        const keys = Object.keys(object).filter(key => object[key] === matchValue && key !== exclusionKey);
+        return keys.length > 0 ? keys[Math.floor(Math.random() * keys.length)] : null;
+    },
+
     // Sets values against an array of objects.
     setArrObjValues: <
         T extends object,

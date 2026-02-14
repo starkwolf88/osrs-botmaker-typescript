@@ -1,5 +1,4 @@
 // Function imports
-import {generalFunctions} from './general-functions.js';
 import {logger} from './logger.js';
 import {timeoutManager} from './timeout-manager.js';
 
@@ -17,7 +16,7 @@ export const shopFunctions = {
             conditionFunction: () => !bot.shop.isOpen(),
             initialTimeout: 1,
             maxWait: 10,
-            onFail: () => generalFunctions.handleFailure(state, 'shopFunctions.closeTimeout', 'Shop not closed after 10 ticks.')
+            failureKey: 'shopFunctions.closeTimeout. Shop not closing'
         });
     },
 
@@ -30,7 +29,7 @@ export const shopFunctions = {
             conditionFunction: () => bot.shop.isOpen(),
             initialTimeout: 1,
             maxWait: 15,
-            onFail: () => generalFunctions.handleFailure(state, 'shopFunctions.openTimeout', 'Shop not open after 15 ticks.')
+            failureKey: 'shopFunctions.closeTimeout. Shop not opening'
         });
     }
 }

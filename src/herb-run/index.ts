@@ -1,18 +1,19 @@
 // Data imports
 import {herbPatchData} from './herb-patch-data.js';
+import {itemIdGroups, itemIds} from '../imports/item-ids.js';
+import {npcIdGroups} from '../imports/npc-ids.js';
+import {widgetData} from '../imports/widget-data.js';
 
 // Function imports
 import {generalFunctions} from '../imports/general-functions.js';
+import {handleFailure} from '../imports/failure-handler.js';
 import {inventoryFunctions} from '../imports/inventory-functions.js';
-import {itemIdGroups, itemIds} from '../imports/item-ids.js';
 import {locationFunctions} from '../imports/location-functions.js';
 import {logger} from '../imports/logger.js';
 import {npcFunctions} from '../imports/npc-functions.js';
-import {npcIdGroups} from '../imports/npc-ids.js';
 import {shopFunctions} from '../imports/shop-functions.js';
 import {tileFunctions} from '../imports/tile-functions.js';
 import {utilityFunctions} from '../imports/utility-functions.js';
-import {widgetData} from '../imports/widget-data.js';
 import {widgetFunctions} from '../imports/widget-functions.js';
 
 // Type imports
@@ -27,9 +28,7 @@ const state = {
     debugEnabled: false,
     debugFullState: false,
     failureCounts: {},
-    failureOrigin: '',
     gameTick: 0,
-    lastFailureKey: '',
     mainState: 'assign_herb_patch',
     scriptName: '[Stark] Herb Run',
     timeout: 0,
@@ -87,7 +86,7 @@ const stateManager = () => {
         case 'walk_to_herb_patch': {
             const herbPatchInProgress = utilityFunctions.getObjectByValues(state.herbPatches, {inProgress: true});
             if (!herbPatchInProgress) {
-                generalFunctions.handleFailure(state, `stateManager (${state.mainState})`, 'Could not determine which herb patch is in progress', 'assign_herb_patch');
+                handleFailure(state, `stateManager.${state.mainState}. Could not determine which herb patch is in progress`, 'assign_herb_patch');
                 break;
             }
             locationFunctions.webWalkTimeout(state, herbPatchInProgress.worldPoint, `${herbPatchInProgress.name} herb patch.`, 200, 10);
@@ -110,7 +109,7 @@ const stateManager = () => {
             // Get in progress herb patch.
             const herbPatchInProgress = utilityFunctions.getObjectByValues(state.herbPatches, {inProgress: true});
             if (!herbPatchInProgress) {
-                generalFunctions.handleFailure(state, `stateManager (${state.mainState})`, 'Could not determine which herb patch is in progress.', 'assign_herb_patch');
+                handleFailure(state, `stateManager.${state.mainState}. Could not determine which herb patch is in progress`, 'assign_herb_patch');
                 break;
             }
 
@@ -129,6 +128,7 @@ const stateManager = () => {
             switch(String(herbPatchState)) {
                 case 'Rake': {
                     bot.objects.interactObject('Herb patch', 'Rake');
+                    state.timeout = 5;
                     break;
                 }
                 case 'Clear': {
@@ -221,7 +221,7 @@ const stateManager = () => {
                 // Get Tool Leprechaun.
                 const toolLeprechaun = npcFunctions.getClosestNpc(npcIdGroups.tool_leprechaun);
                 if (!toolLeprechaun) {
-                    generalFunctions.handleFailure(state, `stateManager (${state.mainState})`, 'Could not locate Tool Leprechaun', 'walk_to_herb_patch');
+                    handleFailure(state, `stateManager.${state.mainState}). Could not locate Tool Leprechaun`, 'walk_to_herb_patch');
                     break;
                 }
 
@@ -247,6 +247,7 @@ const completeHerbPatch = (herbPatchInProgress: HerbPatch, reason: string) => {
     herbPatchInProgress.completed = true;
     herbPatchInProgress.inProgress = false;
     state.mainState = 'assign_herb_patch';
+    generalFunctions.clearFailures(state);
 }
 
 const exchangeToolLeprechaun = (withdrawDeposit: 'withdraw' | 'deposit') => {
@@ -254,7 +255,7 @@ const exchangeToolLeprechaun = (withdrawDeposit: 'withdraw' | 'deposit') => {
     // Get Tool Leprechaun.
     const toolLeprechaun = npcFunctions.getClosestNpc(npcIdGroups.tool_leprechaun);
     if (!toolLeprechaun) {
-        generalFunctions.handleFailure(state, `stateManager (${state.mainState})`, 'Could not locate Tool Leprechaun', 'walk_to_herb_patch');
+        handleFailure(state, `stateManager.${state.mainState}). Could not locate Tool Leprechaun`, 'walk_to_herb_patch');
         return false;
     }
 

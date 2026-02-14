@@ -3,13 +3,10 @@ export type State = {
     // Core
     antibanEnabled: boolean;
     antibanTriggered: boolean;
-    failureOrigin: string,
-    failureCounts: Record<string, number>,
     debugEnabled: boolean;
     debugFullState: boolean;
+    failureCounts: Record<string, number>;
     gameTick: number;
-    lastFailureKey: string;
-    mainState: string;
     scriptName: string;
     timeout: number;
 
@@ -19,6 +16,7 @@ export type State = {
         name: string;
         message: string;
     };
+    mainState?: string;
     scriptInitialised?: boolean;
     sub_state?: string;
     uiCompleted?: boolean;
@@ -29,10 +27,19 @@ export type State = {
     startDepositAllCompleted?: boolean;
 
     // Herb Run
-    herbPatches?: HerbPatch[]
+    herbPatches?: HerbPatch[];
 
     // Mahogany Homes
-    contract?: Contract
+    contract?: Contract;
+
+    // Gold Farmer
+    currentTask?: string;
+    tasks?: Record<string, boolean>;       
+    nextTaskSwitchGameTick?: number;
+    taskMinDurationTicks?: number;
+    taskMaxDurationTicks?: number;
+    itemCombinationState?: string;
+    enableGrandExchange?: boolean;
 }
 
 export type Contract = {

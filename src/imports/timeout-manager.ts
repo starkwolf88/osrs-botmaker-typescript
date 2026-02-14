@@ -1,8 +1,8 @@
 // Function imports
-import {logger} from './logger.js';
+import { handleFailure } from './failure-handler.js';
 
 // Type imports
-import {State} from './types.js';
+import { State } from './types.js';
 
 // timeoutManager
 export const timeoutManager = {
@@ -11,50 +11,65 @@ export const timeoutManager = {
         maxWait: number;
         ticksWaited: number;
         ticksDelayed: number;
-        onFail?: () => void;
+        failureKey?: string;
+        failResetState?: string;
+        state: State;
     }>,
     globalFallback: undefined as (() => void) | undefined,
     globalFallbackThreshold: 60,
     globalTicksWaited: 0,
 
+    // add()
     add({
         state,
         conditionFunction,
         maxWait,
-        onFail,
+        failureKey,
+        failResetState,
         initialTimeout = 0
     }: {
-        state: State,
+        state: State;
         conditionFunction: () => boolean;
         maxWait: number;
-        onFail?: (() => void) | string;
+        failureKey?: string;
+        failResetState?: string;
         initialTimeout?: number;
     }): void {
-        const failCallback = typeof onFail === 'string' ? () => logger(state, 'all', 'Timeout', onFail) : onFail;
         this.conditions.push({
+            state,
             conditionFunction,
             maxWait,
-            ticksWaited: 0,
+            failureKey,
+            failResetState,
             ticksDelayed: initialTimeout,
-            onFail: failCallback
+            ticksWaited: 0,
         });
     },
 
+    // tick()
     tick(): void {
         this.conditions = this.conditions.filter(condition => {
             if (condition.ticksDelayed > 0) {
                 condition.ticksDelayed--;
-                return true; // still delaying
+                return true;
             }
-            if (condition.conditionFunction()) return false;
+
+            // Condition succeeded - clear failure count for this key if it exists.
+            if (condition.conditionFunction()) {
+                if (condition.failureKey) delete condition.state.failureCounts[condition.failureKey];
+                return false;
+            }
+
+            // Condition failed
             condition.ticksWaited++;
             if (condition.ticksWaited >= condition.maxWait) {
-                condition.onFail?.();
+                if (condition.failureKey) handleFailure(condition.state, condition.failureKey, condition.failResetState);
                 return false;
             }
             return true;
         });
 
+        // Global fallback logic
         if (this.conditions.length > 0) {
             this.globalTicksWaited++;
             if (this.globalTicksWaited >= this.globalFallbackThreshold && this.globalFallback) {
@@ -66,5 +81,5 @@ export const timeoutManager = {
         }
     },
 
-    isWaiting(): boolean { return this.conditions.length > 0; }
+    isWaiting(): boolean {return this.conditions.length > 0;}
 };

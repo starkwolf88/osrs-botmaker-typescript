@@ -9,6 +9,7 @@ import {logger} from 'src/imports/logger.js';
 import {bankFunctions} from 'src/imports/bank-functions.js';
 import {createUi} from './ui.js';
 import {generalFunctions} from 'src/imports/general-functions.js';
+import { handleFailure } from '../imports/failure-handler.js';
 import {inventoryFunctions} from 'src/imports/inventory-functions.js';
 import {utilityFunctions} from 'src/imports/utility-functions.js';
 
@@ -22,12 +23,10 @@ const state = {
     // Core
     antibanEnabled: true,
     antibanTriggered: false,
-    debugEnabled: true,
+    debugEnabled: false,
     debugFullState: false,
     failureCounts: {},
-    failureOrigin: '',
     gameTick: 0,
-    lastFailureKey: '',
     mainState: 'open_bank',
     scriptName: '[Stark] Item Combiner',
     timeout: 0,
@@ -134,7 +133,7 @@ const stateManager = () => {
         case 'validate_inventory_quantities': {
             if (!bot.localPlayerIdle()) break;
             if (!inventoryFunctions.checkQuantitiesMatch(state, itemCombinationData.items.map(item => ({itemId: item.id, quantity: item.quantity})))) {
-                generalFunctions.handleFailure(state, `stateManager: ${state.mainState}`, 'Inventory quantities do not match required quantities.', 'open_bank');
+                handleFailure(state, `stateManager.${state.mainState}. Inventory quantities do not match required quantities`, 'open_bank');
                 break;
             }
             state.mainState = 'close_bank';
@@ -143,7 +142,7 @@ const stateManager = () => {
 
         // Close the bank if it's open.
         case 'close_bank': {
-            if (!bot.localPlayerIdle()) break;
+            if (!bot.localPlayerIdle() || bot.bank.isBanking()) break;
             if (!bankFunctions.closeBank(state)) break;
             state.mainState = 'item_interact';
             break;
@@ -151,26 +150,8 @@ const stateManager = () => {
 
         // Interact both items on one another to create the combined item.
         case 'item_interact': {
-            if (!bankFunctions.requireBankClosed(state, 'close_bank') || !bot.localPlayerIdle()) break;
-
-            // If the inventory doesn't contain all items, reset to `open_bank`.
-            if (!bot.inventory.containsAllIds(itemCombinationData.items.map(item => item.id))) {
-                generalFunctions.handleFailure(state, `stateManager: ${state.mainState}`, 'Inventory does not contain the correct items.', 'open_bank');
-                break;
-            }
-
-            // Use items on each other
-            const item1 = itemCombinationData.items[0];
-            const item2 = itemCombinationData.items[1];
-            bot.inventory.itemOnItemWithIds(item1.id, item2.id);
-
-            // Determine if a make item interface exists for this combination and select it.
-            const widgetData = itemCombinationData.make_widget_data;
-            if (widgetData && !widgetFunctions.widgetTimeout(state, widgetData, true)) break;
-
-            // Timeout so that items can combine, then loop back around to script starting state.
-            state.timeout = itemCombinationData.timeout;
-            logger(state, 'debug', `stateManager: ${state.mainState}`, `Combining ${utilityFunctions.convertToTitleCase(item1.name)} with ${utilityFunctions.convertToTitleCase(item2.name)}. Timeout: ${itemCombinationData.timeout}.`);
+            if (!itemInteract()) break;
+            generalFunctions.clearFailures(state);
             state.mainState = 'open_bank';
             break;
         }
@@ -182,3 +163,31 @@ const stateManager = () => {
         }
     }
 };
+
+const itemInteract = () => {
+    if (!bankFunctions.requireBankClosed(state, 'close_bank') || !bot.localPlayerIdle()) return false;
+
+    // Re-assign item combination data for safe use.
+    const itemCombinationData = state.itemCombinationData;
+    if (!itemCombinationData) throw new Error('Item combination not initialized');
+
+    // If the inventory doesn't contain all items, reset to `open_bank`.
+    if (!bot.inventory.containsAllIds(itemCombinationData.items.map(item => item.id))) {
+        handleFailure(state, `stateManager.${state.mainState}. Inventory does not contain the correct items`, 'open_bank');
+        return false;
+    }
+
+    // Use items on each other
+    const item1 = itemCombinationData.items[0];
+    const item2 = itemCombinationData.items[1];
+    bot.inventory.itemOnItemWithIds(item1.id, item2.id);
+
+    // Determine if a make item interface exists for this combination and select it.
+    const widgetData = itemCombinationData.make_widget_data;
+    if (widgetData && !widgetFunctions.widgetTimeout(state, widgetData, true)) return false;
+
+    // Timeout so that items can combine, then loop back around to script starting state.
+    state.timeout = itemCombinationData.timeout;
+    logger(state, 'debug', `stateManager: ${state.mainState}`, `Combining ${utilityFunctions.convertToTitleCase(item1.name)} with ${utilityFunctions.convertToTitleCase(item2.name)}. Timeout: ${itemCombinationData.timeout}.`);
+    return true;
+}
